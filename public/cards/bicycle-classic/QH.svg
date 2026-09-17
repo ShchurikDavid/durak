@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="500" height="700" viewBox="0 0 500 700">
+<rect x="7" y="7" width="486" height="686" rx="28" fill="#fff" stroke="#d6d6d6" stroke-width="10"/>
+<rect x="17" y="17" width="466" height="666" rx="21" fill="none" stroke="#202020" stroke-width="2"/>
+<g fill="#d51f2a" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle"><text x="52" y="82" font-size="66">Q</text><text x="52" y="135" font-size="46">♥</text><text x="448" y="635" font-size="66" transform="rotate(180 448 635)">Q</text><text x="448" y="582" font-size="46" transform="rotate(180 448 582)">♥</text></g>
+<rect x="85" y="82" width="330" height="536" rx="10" fill="#f7f4ed" stroke="#222" stroke-width="3"/>
+<image x="92" y="89" width="316" height="522" preserveAspectRatio="xMidYMid slice" href="QH.jpg"/>
+<rect x="92" y="89" width="316" height="522" fill="none" stroke="#111" stroke-width="2"/>
+</svg>
