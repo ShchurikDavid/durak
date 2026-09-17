@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07130d">
+  <title>Дурак — комнаты</title>
+  <style>
+    :root {
+      --gold:#f1c40f; --gold2:#d4af37; --green1:#145f44; --green2:#052216;
+      --red:#8b1e22; --panel:rgba(5,12,8,.9); --card-w:112px; --gap:10px; --back-w:78px; --back-overlap:.34;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;background:radial-gradient(circle at center,#1a2920 0%,#07100b 100%);color:#eee;font-family:"Segoe UI",Tahoma,sans-serif;user-select:none;overflow-x:hidden}
+    body{min-height:100dvh} button,input{font:inherit;touch-action:manipulation}
+    #game{width:min(1320px,100%);min-height:100dvh;margin:auto;padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:8px}
+    .hidden{display:none!important}
+    .top{display:flex;align-items:center;justify-content:center;position:relative;min-height:48px}
+    #status{width:min(700px,calc(100% - 110px));padding:10px 14px;border:1px solid rgba(212,175,55,.45);border-radius:13px;background:var(--panel);color:var(--gold);font-size:clamp(.8rem,2.4vw,1.1rem);font-weight:800;box-shadow:0 5px 18px rgba(0,0,0,.4)}
+    #music{position:absolute;right:0;top:50%;transform:translateY(-50%);border:1px solid rgba(212,175,55,.4);border-radius:11px;padding:8px 10px;background:rgba(0,0,0,.4);color:var(--gold);cursor:pointer}
+    #roomBadge{position:absolute;left:0;top:50%;transform:translateY(-50%);padding:7px 10px;border:1px solid rgba(212,175,55,.35);border-radius:10px;background:rgba(0,0,0,.35);color:#fff;font-size:.78rem;font-weight:800}
+    .opponent-label,.my-label{color:var(--gold2);font-size:.8rem;font-weight:800;text-align:center}
+    #opponent{min-height:calc(var(--back-w)*1.4 + 6px);display:flex;justify-content:center;align-items:center;padding:0 8px;flex-wrap:nowrap;max-width:100%}
+    .back{width:var(--back-w);height:calc(var(--back-w)*1.4);flex:0 0 auto;margin-left:calc(var(--back-w) * var(--back-overlap) * -1);border:2px solid #fff;border-radius:9px;background-color:#b71c1c;background-size:cover;background-position:center;box-shadow:0 4px 8px rgba(0,0,0,.5);position:relative;overflow:hidden}
+    .back:first-child{margin-left:0}.back::after{content:"";position:absolute;inset:3px;border:1px solid rgba(255,255,255,.55);border-radius:4px;pointer-events:none}
+    .back.blue{background-color:#143a91}.back.red{background-color:#b71c1c}
+    .skin-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px;z-index:30}.skin-modal{width:min(560px,100%);max-height:92dvh;overflow:auto;background:var(--panel);border:1px solid var(--gold);border-radius:20px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.7)}.skin-title{font-size:1.15rem;font-weight:900;color:var(--gold);margin-bottom:14px;text-align:center}.skin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.skin-card{border:1px solid rgba(212,175,55,.3);border-radius:14px;padding:10px;background:rgba(0,0,0,.18);cursor:pointer;text-align:center;color:#fff;font-weight:800}.skin-card.active{border-color:var(--gold);box-shadow:0 0 0 2px rgba(212,175,55,.16)}.skin-preview{height:210px;border-radius:10px;background-size:contain;background-repeat:no-repeat;background-position:center;margin-bottom:8px;border:0}.skin-card small{display:block;opacity:.72;font-weight:600;margin-top:3px}.skin-close,.settings-close{margin-top:14px;width:100%;background:linear-gradient(135deg,#202b27,#111714)!important;border:1px solid rgba(212,175,55,.55)!important;color:#fff!important;box-shadow:0 5px 16px rgba(0,0,0,.35)}.skin-view-btn{width:100%;margin-top:12px;min-height:48px;background:linear-gradient(135deg,#1565c0,#0d47a1);border-color:#42a5f5}.card-viewer{width:min(760px,100%);max-height:94dvh;background:rgba(8,14,12,.97);border:1px solid rgba(212,175,55,.55);border-radius:22px;padding:14px;box-shadow:0 25px 80px rgba(0,0,0,.8);display:flex;flex-direction:column;gap:10px}.card-viewer-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.card-viewer-title{font-size:1.2rem;font-weight:1000;color:var(--gold);text-align:center;flex:1}.card-viewer-count{min-width:64px;text-align:center;padding:8px 10px;border:1px solid rgba(212,175,55,.3);border-radius:11px;color:#fff;font-weight:900;background:rgba(255,255,255,.04)}.viewer-stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:520px;flex:1}.viewer-card-wrap{width:min(330px,62vw);max-height:68dvh;display:flex;align-items:center;justify-content:center;margin:auto}.viewer-card{display:block;width:100%;max-height:68dvh;object-fit:contain;border-radius:12px;filter:drop-shadow(0 12px 24px rgba(0,0,0,.65));touch-action:none}.viewer-arrow{position:absolute;top:50%;transform:translateY(-50%);width:62px;height:62px;border-radius:50%;border:1px solid rgba(212,175,55,.35);background:rgba(255,255,255,.045);color:#fff;font-size:2rem;cursor:pointer;z-index:2}.viewer-arrow:first-child{left:8px}.viewer-arrow:last-child{right:8px}.viewer-arrow:hover{filter:brightness(1.2)}.viewer-arrow:disabled{opacity:.28;cursor:default}.viewer-arrow:active{transform:translateY(-50%) scale(.96)}.viewer-hint{text-align:center;color:#9fa9a2;font-size:.75rem}.viewer-close{width:100%;min-height:48px;margin-top:2px;background:linear-gradient(135deg,#202b27,#111714);border:1px solid rgba(212,175,55,.55);color:#fff}.viewer-name{text-align:center;color:#fff;font-weight:900;font-size:.95rem}
+
+    #arena{flex:1;min-height:320px;display:grid;grid-template-columns:150px minmax(0,1fr) 165px;gap:12px;align-items:center}
+    .actions{display:flex;flex-direction:column;gap:10px}
+    .btn{min-height:50px;border-radius:13px;border:1px solid transparent;font-weight:900;letter-spacing:.4px;color:#fff;cursor:pointer;transition:transform .15s,filter .15s,box-shadow .15s}
+    .btn:active:not(:disabled){transform:scale(.97)}.btn:disabled{background:#222!important;border-color:#333!important;color:#666!important;cursor:not-allowed;box-shadow:none}
+    #bito{background:linear-gradient(135deg,#2e7d32,#1b5e20);border-color:#4caf50}#take{background:linear-gradient(135deg,#c62828,#8e0000);border-color:#ef5350}#restart{display:none;background:linear-gradient(135deg,#1565c0,#0d47a1);border-color:#42a5f5}#shareRoom{background:linear-gradient(135deg,#1976d2,#0d47a1);border-color:#42a5f5;color:#fff;box-shadow:0 4px 12px rgba(13,71,161,.3)}#leave{background:#252525;border-color:#555}
+    #table{min-height:300px;padding:22px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:12px;position:relative;border:10px solid var(--red);outline:4px solid #180806;border-radius:999px;background:radial-gradient(ellipse at center,var(--green1),var(--green2));box-shadow:inset 0 0 50px rgba(0,0,0,.8),0 14px 30px rgba(0,0,0,.65)}
+    #table::before{content:"";position:absolute;inset:9px;border:2px solid rgba(235,225,180,.3);border-radius:999px;pointer-events:none}
+    .pair{position:relative;width:var(--card-w);height:calc(var(--card-w)*1.4)}.card{display:block;width:var(--card-w);height:calc(var(--card-w)*1.4);object-fit:contain;border-radius:8px;filter:drop-shadow(0 5px 9px rgba(0,0,0,.6))}
+    .attack{position:absolute;inset:0 auto auto 0}.defend{position:absolute;top:19%;left:19%;transform:rotate(10deg);z-index:2}
+    .info{min-height:150px;padding:10px;border:1px solid rgba(212,175,55,.3);border-radius:15px;background:rgba(0,0,0,.4);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px}
+    #deckCount{color:var(--gold);font-weight:900}#trump img{width:92px;height:calc(92px*1.4)}
+    #hand{min-height:calc(var(--card-w)*1.4 + 8px);display:flex;justify-content:center;align-items:flex-end;flex-wrap:wrap;gap:var(--gap);padding:4px 4px max(6px,env(safe-area-inset-bottom))}
+    #hand .card{cursor:pointer}
+    @media(hover:hover){.btn:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}}
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);padding:10px 16px;border-radius:12px;background:rgba(0,0,0,.9);border:1px solid rgba(212,175,55,.4);color:#fff;z-index:50;display:none;max-width:min(90vw,520px);text-align:center}
+    /* Lobby */
+    #lobby{width:min(620px,100%);margin:auto;padding:20px 12px 30px;display:flex;flex-direction:column;gap:14px}
+    .logo{text-align:center;color:var(--gold);font-size:clamp(2rem,8vw,3.4rem);font-weight:1000;text-shadow:0 4px 15px #000}
+    .subtitle{text-align:center;color:#bfc8c2;margin-top:-8px}
+    .panel{background:var(--panel);border:1px solid rgba(212,175,55,.35);border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .create{display:flex;gap:8px}.create input{flex:1;min-width:0;padding:13px;border-radius:12px;border:1px solid #555;background:#111b15;color:#fff;text-align:center;text-transform:uppercase;outline:none}
+    .primary{background:linear-gradient(135deg,#b78b00,#6f5300);border-color:#e1bc3d}.room-create{width:100%;min-height:50px}.room-share{width:100%;min-height:44px;background:rgba(255,255,255,.06);border-color:rgba(212,175,55,.3)}
+    .mode-title{font-weight:900;color:var(--gold);margin:0 0 10px}.mode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}.mode-option{position:relative}.mode-option input{position:absolute;opacity:0;pointer-events:none}.mode-option label{display:flex;align-items:center;justify-content:center;min-height:48px;padding:8px;border:1px solid rgba(212,175,55,.25);border-radius:12px;background:rgba(255,255,255,.035);color:#fff;font-weight:800;text-align:center;cursor:pointer;transition:.15s}.mode-option input:checked+label{border-color:var(--gold);background:rgba(212,175,55,.14);box-shadow:0 0 0 1px rgba(212,175,55,.25) inset;color:var(--gold)}.mode-note{font-size:.72rem;color:#9fa9a2;margin:-4px 0 12px;text-align:center}.room-mode{font-size:.72rem;color:#d9c46a;margin-top:3px;font-weight:800}
+    #roomList{display:flex;flex-direction:column;gap:8px;max-height:48vh;overflow:auto}
+    .room{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1px solid rgba(212,175,55,.22);border-radius:12px;background:rgba(255,255,255,.035)}
+    .room-code{font-size:1.15rem;font-weight:1000;letter-spacing:2px;color:var(--gold)}.room-meta{font-size:.75rem;color:#aeb8b1}
+    .room button{min-width:92px;min-height:42px}.empty{text-align:center;color:#89938d;padding:18px}.room-share{margin-top:8px}.room-music{align-self:center;min-height:42px;padding:8px 16px;background:rgba(0,0,0,.35);border-color:rgba(212,175,55,.35)}
+    .room-skin,.room-settings{min-height:42px;padding:8px 16px;background:rgba(0,0,0,.35);border-color:rgba(212,175,55,.35)}
+    .settings-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+    .settings-modal{width:min(520px,100%);max-height:90dvh;overflow:auto;background:#0a1510;border:1px solid rgba(212,175,55,.45);border-radius:20px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+    .settings-title{font-size:1.35rem;font-weight:1000;color:var(--gold);text-align:center;margin-bottom:14px}.setting-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.08)}.setting-row:last-of-type{border-bottom:0}.setting-label{font-weight:850}.setting-sub{display:block;font-size:.7rem;color:#929d96;margin-top:3px;font-weight:500}.setting-control{display:flex;align-items:center;gap:8px}.setting-toggle{min-width:92px;min-height:38px;border-radius:10px;border:1px solid rgba(212,175,55,.35);background:#111c16;color:#fff;font-weight:900;cursor:pointer}.setting-range{width:145px;accent-color:#d4af37}.theme-select{min-height:38px;border-radius:10px;border:1px solid rgba(212,175,55,.35);background:#111c16;color:#fff;padding:6px 9px}.settings-close{width:100%;margin-top:14px;background:rgba(255,255,255,.07);border-color:rgba(212,175,55,.3)}
+    body.theme-light{background:radial-gradient(circle at center,#eef3ef 0%,#cfd8d2 100%);color:#172019}body.theme-light .panel,body.theme-light .settings-modal{background:rgba(245,248,246,.95);color:#172019}body.theme-light .subtitle,body.theme-light .room-meta,body.theme-light .setting-sub{color:#536158}body.theme-light .setting-toggle,body.theme-light .theme-select{background:#e7ece9;color:#172019}
+    body.theme-blue{background:radial-gradient(circle at center,#182b45 0%,#07101c 100%)}body.theme-blue .panel,body.theme-blue .settings-modal{background:rgba(7,17,30,.94)}
+    @media(max-width:850px){:root{--card-w:92px;--back-w:64px}#arena{grid-template-columns:110px minmax(0,1fr) 125px;gap:8px}#table{min-height:290px;border-width:8px}.info{padding:7px}#trump img{width:74px;height:calc(74px*1.4)}}
+    @media(max-width:600px){:root{--card-w:72px;--gap:4px;--back-w:50px}#game{gap:5px}#status{width:calc(100% - 100px);padding:8px 9px;font-size:.72rem}#roomBadge{font-size:.68rem;padding:6px 7px}#music{font-size:0;padding:8px}#music::before{content:"🎵";font-size:1rem}.back{border-width:1px;border-radius:6px}#arena{min-height:0;grid-template-columns:1fr 1fr;grid-template-areas:"table table" "actions info";gap:6px}#table{grid-area:table;min-height:245px;padding:14px 7px;border-width:6px;gap:6px;border-radius:60px}#table::before{inset:6px}.actions{grid-area:actions;flex-direction:row;flex-wrap:wrap}.info{grid-area:info;min-height:55px;flex-direction:row;justify-content:space-around;gap:5px}.btn{min-height:46px;font-size:.68rem;flex:1;min-width:30%}#shareRoom{min-width:100%;font-size:.7rem}#trump img{width:56px;height:calc(56px*1.4)}#hand{gap:3px}.create{flex-direction:column}.room{padding:10px}.room button{min-width:82px}.logo{font-size:2.2rem}}
+    @media(max-width:600px){.skin-modal{padding:14px}.skin-preview{height:160px}.card-viewer{padding:10px;border-radius:18px}.viewer-arrow{width:44px;height:44px;font-size:1.7rem}.viewer-arrow:first-child{left:4px}.viewer-arrow:last-child{right:4px}.viewer-card-wrap,.viewer-card{width:min(260px,64vw);max-height:62dvh}.viewer-hint{font-size:.68rem}.viewer-name{font-size:.86rem}}
+    @media(max-width:380px){:root{--card-w:62px;--back-w:44px}#table{min-height:215px}.btn{font-size:.62rem}}
+    @media(max-height:600px) and (orientation:landscape){:root{--card-w:66px;--back-w:46px}#game{min-height:100vh;gap:3px;padding-top:4px;padding-bottom:4px}#arena{grid-template-columns:90px minmax(0,1fr) 100px;grid-template-areas:none}#table{grid-area:auto;min-height:190px}.actions,.info{grid-area:auto}}
+  </style>
+</head>
+<body>
+  <main id="lobby">
+    <div class="logo">🃏 Дурак</div>
+    <div class="subtitle">Создай комнату на сайте и пригласи соперника по ссылке</div>
+    <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><button id="lobbyMusic" class="btn room-music" type="button">🔊 Музыка: вкл.</button><button id="openSettings" class="btn room-settings" type="button">⚙️ Настройки</button></div>
+
+    <section class="panel">
+      <div class="mode-title">🎮 Тип игры</div>
+      <div class="mode-grid">
+        <div class="mode-option"><input type="radio" name="gameMode" id="mode24" value="24"><label for="mode24">🃏 24 карты</label></div>
+        <div class="mode-option"><input type="radio" name="gameMode" id="mode36" value="36" checked><label for="mode36">🃏 36 карт</label></div>
+        <div class="mode-option"><input type="radio" name="gameMode" id="mode52" value="52"><label for="mode52">🃏 52 карты</label></div>
+        <div class="mode-option"><input type="radio" name="gameMode" id="mode54" value="54"><label for="mode54">🃏 52 + 2 джокера</label></div>
+      </div>
+      <div class="mode-note">Режим выбирается при создании комнаты и изменить его после нельзя.</div>
+      <button id="createRoom" class="btn primary room-create">➕ Создать новую комнату</button>
+      <button id="shareLobby" class="btn room-share">🔗 Поделиться сайтом</button>
+    </section>
+
+    <section class="panel">
+      <div style="font-weight:900;color:var(--gold);margin-bottom:10px">Войти по коду</div>
+      <div class="create">
+        <input id="roomCodeInput" maxlength="5" placeholder="КОД КОМНАТЫ">
+        <button id="joinByCode" class="btn primary">Войти</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div style="font-weight:900;color:var(--gold);margin-bottom:10px">Открытые комнаты</div>
+      <div id="roomList"><div class="empty">Загрузка комнат...</div></div>
+    </section>
+  </main>
+
+  <main id="game" class="hidden">
+    <div class="top">
+      <div id="roomBadge">Комната —</div>
+      <div id="status">Ожидание второго игрока...</div>
+      <button id="music" type="button" aria-label="Музыка">🔊</button>
+    </div>
+    <div class="opponent-label">Соперник</div>
+    <div id="opponent"></div>
+
+    <section id="arena">
+      <div class="actions">
+        <button id="bito" class="btn" disabled>Бито</button>
+        <button id="take" class="btn" disabled>Взять</button>
+        <button id="restart" class="btn">Новая игра</button>
+        <button id="shareRoom" class="btn">🔗 Пригласить</button>
+        <button id="leave" class="btn">Выйти</button>
+      </div>
+      <div id="table"></div>
+      <aside class="info">
+        <div>В колоде: <b id="deckCount">0</b></div>
+        <div>Козырь</div>
+        <div id="trump"></div>
+      </aside>
+    </section>
+
+    <div class="my-label">Ваши карты</div>
+    <div id="hand"></div>
+  </main>
+
+  <div id="settingsBackdrop" class="settings-backdrop hidden">
+    <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div id="settingsTitle" class="settings-title">⚙️ Настройки</div>
+      <div class="setting-row"><div class="setting-label">🔊 Музыка<span class="setting-sub">Фоновая музыка игры</span></div><div class="setting-control"><button id="settingsMusic" class="setting-toggle" type="button"></button></div></div>
+      <div class="setting-row"><div class="setting-label">🔔 Звуки<span class="setting-sub">Звуки действий и карт</span></div><div class="setting-control"><button id="settingsSounds" class="setting-toggle" type="button"></button></div></div>
+      <div class="setting-row"><div class="setting-label">🔉 Громкость музыки<span class="setting-sub">Текущая громкость: <b id="musicVolumeValue">3%</b></span></div><div class="setting-control"><input id="musicVolume" class="setting-range" type="range" min="0" max="100" step="1"></div></div>
+      <div class="setting-row"><div class="setting-label">🔈 Громкость звуков<span class="setting-sub">Громкость эффектов</span></div><div class="setting-control"><input id="soundVolume" class="setting-range" type="range" min="0" max="100" step="1"></div></div>
+      <div class="setting-row"><div class="setting-label">🎨 Тема интерфейса<span class="setting-sub">Меняется только у тебя</span></div><div class="setting-control"><select id="themeSelect" class="theme-select"><option value="dark">🌙 Тёмная</option><option value="blue">🔵 Синяя</option><option value="light">☀️ Светлая</option></select></div></div>
+      <button id="closeSettings" class="btn settings-close" type="button">Закрыть</button>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <audio id="bgMusic" src="bg-music.mp3" loop preload="auto"></audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io({ transports:['websocket','polling'], reconnection:true, reconnectionAttempts:Infinity, reconnectionDelay:1000, reconnectionDelayMax:5000 });
+    const $=id=>document.getElementById(id);
+    const lobby=$('lobby'), game=$('game'), bgMusic=$('bgMusic');
+    let musicOn=localStorage.getItem('durak_music') !== 'off', soundsOn=localStorage.getItem('durak_sounds') !== 'off', actionPending=false, audioCtx=null, currentState=null;
+    let musicVolume=Number(localStorage.getItem('durak_music_volume') ?? 3), soundVolume=Number(localStorage.getItem('durak_sound_volume') ?? 100), theme=localStorage.getItem('durak_theme') || 'dark';
+    bgMusic.volume=musicVolume/100;
+    function applyTheme(){document.body.classList.remove('theme-light','theme-blue');if(theme!=='dark')document.body.classList.add('theme-'+theme)}
+    applyTheme();
+    function updateMusicButtons(){
+      $('music').textContent=musicOn?'🔊':'🔇';
+      $('lobbyMusic').textContent=musicOn?'🔊 Музыка: вкл.':'🔇 Музыка: выкл.';
+      $('lobbyMusic').setAttribute('aria-pressed',String(musicOn));
+      if($('settingsMusic')) $('settingsMusic').textContent=musicOn?'Вкл.':'Выкл.';
+      if($('settingsSounds')) $('settingsSounds').textContent=soundsOn?'Вкл.':'Выкл.';
+      if($('musicVolume')) $('musicVolume').value=musicVolume;
+      if($('soundVolume')) $('soundVolume').value=soundVolume;
+      if($('musicVolumeValue')) $('musicVolumeValue').textContent=musicVolume+'%';
+      if($('themeSelect')) $('themeSelect').value=theme;
+    }
+    updateMusicButtons();
+
+    function getUserId(){
+      let id=localStorage.getItem('durak_user_id');
+      if(!id){id='user_'+crypto.randomUUID();localStorage.setItem('durak_user_id',id)}
+      return id;
+    }
+    const userId=getUserId();
+    function getName(){
+      let name=localStorage.getItem('durak_name');
+      if(!name){name='Игрок';localStorage.setItem('durak_name',name)}
+      return name;
+    }
+    const CARD_ASSET_BASE='/cards/bicycle-classic/';
+    /*
+      Сервер присылает «десятку» как 0S / 0H / 0D / 0C (формат Deck of Cards API),
+      а файлы картинок лежат как 10S.png. Раньше клиент просил 0S.png — файла
+      нет, поэтому вместо карты была сломанная картинка. Здесь код нормализуется,
+      плюс добавлен запасной вариант .svg (там десятка названа как 0S.svg).
+    */
+    function pngName(code){
+      const key=String(code||'').toUpperCase();
+      return /^0[SHDC]$/.test(key) ? '10'+key[1] : key;
+    }
+    function svgName(code){
+      const key=String(code||'').toUpperCase();
+      return /^10[SHDC]$/.test(key) ? '0'+key[2] : key;
+    }
+    function cardUrl(code){ return `${CARD_ASSET_BASE}${pngName(code)}.png`; }
+    function makeCardImg(code,alt,cls){
+      const img=document.createElement('img');
+      img.className=cls||'card';
+      img.alt=alt||String(code||'');
+      img.draggable=false;
+      img.loading='eager';
+      img.dataset.step='0';
+      img.addEventListener('error',()=>{
+        if(img.dataset.step==='0'){ img.dataset.step='1'; img.src=`${CARD_ASSET_BASE}${svgName(code)}.svg`; }
+        else if(img.dataset.step==='1'){ img.dataset.step='2'; img.src=CARD_BACK; }
+      });
+      img.src=cardUrl(code);
+      return img;
+    }
+
+    function ensureAudio(){try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch(_){}}
+    function playSound(type){
+      if(!soundsOn || soundVolume<=0)return;
+      try{
+        ensureAudio(); const now=audioCtx.currentTime; const duration=type==='bito'||type==='take'?.06:.08;
+        const makeNoise=()=>{const length=Math.floor(audioCtx.sampleRate*duration),buffer=audioCtx.createBuffer(1,length,audioCtx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<length;i++)data[i]=Math.random()*2-1;return buffer};
+        const hit=(at,volume)=>{const source=audioCtx.createBufferSource(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();source.buffer=makeNoise();filter.type='lowpass';filter.frequency.setValueAtTime(type==='defend'?450:350,at);gain.gain.setValueAtTime(volume*(soundVolume/100),at);gain.gain.exponentialRampToValueAtTime(.001,at+duration);source.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);source.start(at)};
+        if(type==='bito'||type==='take'){hit(now,.28);hit(now+.05,.28);hit(now+.10,.28)}else hit(now,.42);
+      }catch(_){}
+    }
+    async function toggleMusic(){
+      try{
+        if(musicOn){
+          bgMusic.pause();
+          musicOn=false;
+        }else{
+          ensureAudio();
+          await bgMusic.play();
+          musicOn=true;
+        }
+        bgMusic.volume=musicVolume/100;
+        localStorage.setItem('durak_music',musicOn?'on':'off');
+        updateMusicButtons();
+      }catch(_){}
+    }
+    $('music').addEventListener('click',()=>{ensureAudio();toggleMusic()});
+    $('lobbyMusic').addEventListener('click',()=>{ensureAudio();toggleMusic()});
+    document.addEventListener('pointerdown',()=>{
+      ensureAudio();
+      if(musicOn&&bgMusic.paused)bgMusic.play().catch(()=>{});
+    },{once:true});
+
+    function showToast(msg){const el=$('toast');el.textContent=msg;el.style.display='block';clearTimeout(showToast.t);showToast.t=setTimeout(()=>el.style.display='none',2600)}
+    function setRoomInUrl(code){history.replaceState(null,'',`${location.pathname}?room=${encodeURIComponent(code)}`)}
+    function roomFromUrl(){return new URLSearchParams(location.search).get('room')?.toUpperCase()||''}
+
+    function enterGame(code){
+      lobby.classList.add('hidden'); game.classList.remove('hidden');
+      $('roomBadge').textContent='Комната '+code;
+      setRoomInUrl(code);
+      localStorage.setItem('durak_room_code',code);
+    }
+    async function shareText(text, fallbackText){
+      try{
+        if(navigator.share){
+          await navigator.share({title:'Дурак',text});
+          return;
+        }
+        await navigator.clipboard.writeText(text);
+        showToast(fallbackText || 'Ссылка скопирована!');
+      }catch(_){}
+    }
+
+    function roomInviteUrl(code){
+      return `${location.origin}${location.pathname}?room=${encodeURIComponent(code)}`;
+    }
+    function enterLobby(){
+      game.classList.add('hidden'); lobby.classList.remove('hidden');
+      history.replaceState(null,'',location.pathname);
+      localStorage.removeItem('durak_room_code');
+      currentState=null; actionPending=false;
+    }
+
+    socket.on('connect',()=>{
+      actionPending=false;
+      const remembered=localStorage.getItem('durak_room_code')||roomFromUrl();
+      if(remembered) socket.emit('joinRoom',{userId,name:getName(),roomCode:remembered});
+      socket.emit('getRooms');
+    });
+    socket.on('disconnect',()=>{if(!game.classList.contains('hidden'))$('status').textContent='⚠️ Связь потеряна. Переподключение...'});
+    socket.on('roomCreated',({code})=>{socket.emit('joinRoom',{userId,name:getName(),roomCode:code})});
+    socket.on('joinedRoom',({code})=>enterGame(code));
+    socket.on('roomError',msg=>{
+      // Раньше код несуществующей комнаты оставался в localStorage, и клиент
+      // пытался войти в неё при каждом переподключении.
+      localStorage.removeItem('durak_room_code');
+      showToast(msg);
+      if(currentState===null)enterLobby();
+    });
+    socket.on('gameFull',()=>showToast('Комната уже заполнена.'));
+    socket.on('roomClosed',msg=>{
+      localStorage.removeItem('durak_room_code');
+      currentState=null;
+      enterLobby();
+      showToast(msg||'Комната закрыта.');
+    });
+    socket.on('roomList',renderRoomList);
+    socket.on('roomLobby',data=>{renderRoomList(data.rooms||[]);if(data.message)showToast(data.message)});
+    socket.on('updateState',state=>{currentState=state;actionPending=false;if(state.lastAction&&state.lastAction!=='start'&&state.lastAction!=='reconnect'&&state.lastAction!=='disconnect'&&state.lastAction!=='gameOver')playSound(state.lastAction);render(state)});
+
+    function renderRoomList(rooms){
+      const el=$('roomList'); el.innerHTML='';
+      if(!rooms.length){el.innerHTML='<div class="empty">Пока нет открытых комнат</div>';return}
+      rooms.forEach(r=>{
+        const row=document.createElement('div');row.className='room';
+        const left=document.createElement('div');left.innerHTML=`<div class="room-code">${r.code}</div><div class="room-meta">${r.players}/${r.maxPlayers} · ${r.players>=r.maxPlayers?'Заполнена':r.players===1?'Ждём соперника':'Свободна'}</div><div class="room-mode">🎮 ${r.modeLabel||'36 карт'}</div>`;
+        const btn=document.createElement('button');btn.className='btn primary';btn.textContent='Войти';btn.disabled=r.players>=r.maxPlayers;
+        btn.onclick=()=>socket.emit('joinRoom',{userId,name:getName(),roomCode:r.code});
+        row.append(left,btn);el.appendChild(row);
+      });
+    }
+
+    function selectedGameMode(){return document.querySelector('input[name=gameMode]:checked')?.value||'36'}
+    $('createRoom').onclick=()=>socket.emit('createRoom',selectedGameMode());
+
+    const CARD_BACK=`${CARD_ASSET_BASE}backs/red.png`;
+
+    $('openSettings').onclick=()=>{$('settingsBackdrop').classList.remove('hidden');updateMusicButtons()};
+    $('closeSettings').onclick=()=>$('settingsBackdrop').classList.add('hidden');
+    $('settingsBackdrop').addEventListener('click',e=>{if(e.target===$('settingsBackdrop'))$('settingsBackdrop').classList.add('hidden')});
+    $('settingsMusic').onclick=()=>{ensureAudio();toggleMusic()};
+    $('settingsSounds').onclick=()=>{soundsOn=!soundsOn;localStorage.setItem('durak_sounds',soundsOn?'on':'off');updateMusicButtons();if(soundsOn)playSound('click')};
+    $('musicVolume').oninput=e=>{musicVolume=Number(e.target.value);bgMusic.volume=musicVolume/100;localStorage.setItem('durak_music_volume',musicVolume);if(musicVolume===0&&musicOn){bgMusic.pause()}else if(musicVolume>0&&musicOn&&bgMusic.paused){bgMusic.play().catch(()=>{})};updateMusicButtons()};
+    $('soundVolume').oninput=e=>{soundVolume=Number(e.target.value);localStorage.setItem('durak_sound_volume',soundVolume);updateMusicButtons()};
+    $('themeSelect').onchange=e=>{theme=e.target.value;localStorage.setItem('durak_theme',theme);applyTheme();updateMusicButtons()};
+    $('shareLobby').onclick=()=>shareText(location.href,'Ссылка на игру скопирована!');
+
+    $('shareRoom').onclick=()=>{
+      const code=currentState?.roomCode || localStorage.getItem('durak_room_code');
+      if(!code) return;
+      shareText(roomInviteUrl(code),`Приглашение в комнату ${code} скопировано!`);
+    };
+    $('joinByCode').onclick=()=>joinCode();
+    $('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')joinCode()});
+    function joinCode(){const code=$('roomCodeInput').value.trim().toUpperCase();if(!code)return showToast('Введите код комнаты');socket.emit('joinRoom',{userId,name:getName(),roomCode:code})}
+
+    function render(state){
+      $('status').textContent=state.statusText||'Ожидание...';$('deckCount').textContent=state.deckCount;
+      $('roomBadge').textContent=`Комната ${state.roomCode} · ${state.playersConnected}/${state.playersTotal||2} · ${state.gameModeLabel||'36 карт'}`;
+      renderOpponent(state);renderTrump(state);renderTable(state);renderHand(state);
+      $('bito').disabled=!state.canPass||actionPending;$('take').disabled=!state.canTake||actionPending;$('restart').style.display=state.canRestart?'block':'none';
+    }
+    /*
+      Карты соперника стали крупнее, поэтому перекрытие считается по факту:
+      веер всегда вписывается в доступную ширину, даже если карт много.
+    */
+    function fanOverlap(el,count){
+      if(count<2) return 0;
+      const backW=parseFloat(getComputedStyle(el).getPropertyValue('--back-w'))||78;
+      const available=Math.max(120,(el.clientWidth||window.innerWidth)-20);
+      const needed=backW+(count-1)*backW*(1-0.34);
+      if(needed<=available) return 0.34;
+      const step=(available-backW)/(count-1);
+      return Math.min(0.78,Math.max(0.34,1-step/backW));
+    }
+    function renderOpponent(state){
+      const el=$('opponent');el.innerHTML='';
+      const count=Number(state?.opponentCardCount||0);
+      el.style.setProperty('--back-overlap',fanOverlap(el,count));
+      for(let i=0;i<count;i++){
+        const back=document.createElement('div');
+        back.className='back';
+        back.style.backgroundImage=`url("${CARD_BACK}")`;
+        el.appendChild(back);
+      }
+    }
+    function renderTrump(state){const el=$('trump');el.innerHTML='';if(!state.trumpCard)return;el.appendChild(makeCardImg(state.trumpCard.code,'Козырь'))}
+    function renderTable(state){
+      const el=$('table');el.innerHTML='';
+      state.table.forEach(pair=>{
+        const pairEl=document.createElement('div');pairEl.className='pair';
+        pairEl.appendChild(makeCardImg(pair.attack.code,`${pair.attack.val}${pair.attack.suit}`,'card attack'));
+        if(pair.defend) pairEl.appendChild(makeCardImg(pair.defend.code,`${pair.defend.val}${pair.defend.suit}`,'card defend'));
+        el.appendChild(pairEl);
+      });
+    }
+    function renderHand(state){
+      const el=$('hand');el.innerHTML='';
+      (state.myHand||[]).forEach((card,index)=>{
+        const img=makeCardImg(card.code,`${card.val}${card.suit}`);
+        img.addEventListener('click',()=>{if(!actionPending){actionPending=true;socket.emit('playCard',index)}});
+        el.appendChild(img);
+      });
+    }
+
+    $('bito').onclick=()=>{if(actionPending)return;actionPending=true;socket.emit('bito')};
+    $('take').onclick=()=>{if(actionPending)return;actionPending=true;socket.emit('take')};
+    $('restart').onclick=()=>{if(actionPending)return;actionPending=true;socket.emit('restartGame')};
+    $('leave').onclick=()=>{if(confirm('Выйти из комнаты?')){socket.emit('leaveRoom');enterLobby()}};
+
+    // При повороте экрана пересчитываем веер соперника под новую ширину.
+    let resizeTimer=null;
+    window.addEventListener('resize',()=>{
+      clearTimeout(resizeTimer);
+      resizeTimer=setTimeout(()=>{if(currentState)renderOpponent(currentState)},120);
+    });
+  </script>
+</body>
+</html>

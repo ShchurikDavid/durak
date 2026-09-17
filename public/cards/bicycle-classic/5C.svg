@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="700" viewBox="0 0 500 700">
+<defs><filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".25"/></filter></defs>
+<rect x="7" y="7" width="486" height="686" rx="28" fill="#fff" stroke="#d6d6d6" stroke-width="10" filter="url(#shadow)"/>
+<rect x="17" y="17" width="466" height="666" rx="21" fill="none" stroke="#202020" stroke-width="2"/>
+<g fill="#111" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle">
+<text x="52" y="82" font-size="66">5</text><text x="52" y="135" font-size="46">♣</text>
+<text x="448" y="635" font-size="66" transform="rotate(180 448 635)">5</text><text x="448" y="582" font-size="46" transform="rotate(180 448 582)">♣</text>
+<g transform="translate(0 0)"><text x="30" y="25" class="pip">♣</text><text x="70" y="25" class="pip">♣</text><text x="50" y="50" class="pip">♣</text><text x="30" y="75" class="pip">♣</text><text x="70" y="75" class="pip">♣</text></g></g>
+<style>.pip{font-size:64px}.acepip{font-size:235px}</style>
+</svg>
