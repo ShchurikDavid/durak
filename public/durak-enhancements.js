@@ -80,22 +80,23 @@
 
       /* 3-4 player seats. They live inside the table, so there is no viewport geometry jump. */
       .multi-players-around{
-        position:absolute;inset:0;z-index:8;pointer-events:none;
+        position:absolute;inset:0;z-index:1000;pointer-events:none;
         display:block;
       }
       .multi-player-seat{
         position:absolute;width:100px;min-height:67px;padding:5px 6px;
         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
         border:1px solid rgba(212,175,55,.30);border-radius:11px;
-        background:rgba(4,12,8,.88);backdrop-filter:blur(3px);
-        box-shadow:0 5px 12px rgba(0,0,0,.30);
+        background:rgba(4,12,8,.95);backdrop-filter:blur(3px);
+        box-shadow:0 8px 20px rgba(0,0,0,.50);
+        z-index:1001;
       }
       .multi-player-seat.me{border-color:rgba(212,175,55,.58)}
       .multi-player-seat.defender{border-color:rgba(219,78,78,.68);box-shadow:0 0 0 1px rgba(219,78,78,.22),0 5px 12px rgba(0,0,0,.30)}
-      .multi-seat-top{top:7px;left:50%;transform:translateX(-50%)}
-      .multi-seat-right{right:8px;top:50%;transform:translateY(-50%)}
-      .multi-seat-left{left:8px;top:50%;transform:translateY(-50%)}
-      .multi-seat-bottom{bottom:7px;left:50%;transform:translateX(-50%)}
+      .multi-seat-top-left{top:-18px;left:-18px}
+      .multi-seat-top-right{top:-18px;right:-18px}
+      .multi-seat-bottom-left{bottom:-18px;left:-18px}
+      .multi-seat-bottom-right{bottom:-18px;right:-18px}
       .multi-player-name{width:100%;font-size:.67rem;font-weight:900;color:#fff;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .multi-backs{height:25px;display:flex;justify-content:center;align-items:center}
       .mini-back{
@@ -110,7 +111,6 @@
       .mini-count{font-size:.55rem;color:var(--gold);font-weight:900;line-height:1}
 
       /* No player seats/panels in a 2-player game. Original opponent backs stay visible. */
-      #multiPlayers{display:none!important}
       #game.durak-2p #multiPlayers{display:none!important}
       #game.durak-mp #opponent,#game.durak-mp .opponent-label{display:none!important}
 
@@ -158,6 +158,7 @@
           gap:7px!important;align-items:center;
           min-height:0!important;
           width:100%;
+          position:relative;
         }
         #game #table{
           grid-area:table!important;
@@ -175,12 +176,12 @@
         #game .info{grid-area:info!important;min-width:0;min-height:62px!important;padding:6px!important;overflow:hidden}
         #game #trump img{width:48px!important;height:67px!important}
         #game #hand{width:100%;min-height:0;padding-top:3px}
-        #game .multi-players-around{inset:0}
-        #game .multi-player-seat{width:82px;min-height:57px;padding:4px 5px}
-        #game .multi-seat-top{top:6px}
-        #game .multi-seat-right{right:5px}
-        #game .multi-seat-left{left:5px}
-        #game .multi-seat-bottom{bottom:6px}
+        #game .multi-players-around{inset:0;z-index:1000}
+        #game .multi-player-seat{width:82px;min-height:57px;padding:4px 5px;z-index:1001}
+        #game .multi-seat-top-left{top:-18px;left:-18px}
+        #game .multi-seat-top-right{top:-18px;right:-18px}
+        #game .multi-seat-bottom-left{bottom:-18px;left:-18px}
+        #game .multi-seat-bottom-right{bottom:-18px;right:-18px}
         #game .multi-player-name{font-size:.57rem}
         #game .multi-player-state{font-size:.5rem}
         #game .mini-back{width:14px;height:20px;margin-left:-6px}
@@ -239,6 +240,15 @@
         background:rgba(86,94,88,.30);
         box-shadow:inset 0 0 0 1px rgba(120,128,122,.14);
       }
+      /* На ПК серую заливку "нельзя ходить" делаем заметнее — на большом
+         экране прежней прозрачности не хватало, чтобы отличить карты
+         с первого взгляда. На телефоне оставляем как было. */
+      @media(min-width:601px){
+        #game #hand .durak-card-filter.cant::after{
+          background:rgba(40,44,42,.52);
+          box-shadow:inset 0 0 0 1px rgba(120,128,122,.22);
+        }
+      }
       #game #hand .durak-card-filter .card{display:block}
       #game #hand .durak-card-can,
       #game #hand .durak-card-cant{
@@ -246,30 +256,18 @@
         opacity:1!important;
       }
 
-      /* Mobile hand: keep every card fully inside the viewport even on wide-DPI phones. */
+      /* Mobile hand: let the same overlap system as desktop do the work —
+         the JS-computed overlap (now applied to this very wrapper, see
+         prepareCardFilterOverlays) already shrinks the row to fit any
+         card count. We only need to make sure nothing wraps to a new line
+         and that if overlap alone still isn't enough, cards scroll instead
+         of being clipped off-screen (never overflow:hidden here). */
       @media(max-width:900px){
         #game #hand{
           width:100%!important;
           max-width:100%!important;
           flex-wrap:nowrap!important;
           justify-content:center!important;
-          gap:2px!important;
-          overflow:hidden!important;
-          padding-left:3px!important;
-          padding-right:3px!important;
-        }
-        #game #hand .durak-card-filter{
-          width:min(74px,calc((100vw - 34px)/6))!important;
-          height:calc(min(74px,calc((100vw - 34px)/6))*1.4)!important;
-          min-width:min(74px,calc((100vw - 34px)/6))!important;
-          min-height:calc(min(74px,calc((100vw - 34px)/6))*1.4)!important;
-          flex:0 0 min(74px,calc((100vw - 34px)/6))!important;
-        }
-        #game #hand .card{
-          width:100%!important;
-          max-width:100%!important;
-          height:auto!important;
-          flex:none!important;
         }
       }
 
@@ -353,11 +351,11 @@
     const myIndex = Math.max(0, players.findIndex(p => p.isMe));
     const relative = (players.indexOf(player) - myIndex + count) % count;
 
-    if (relative === 0) return 'multi-seat-bottom';
-    if (count === 3) return relative === 1 ? 'multi-seat-top' : 'multi-seat-right';
-    if (relative === 1) return 'multi-seat-top';
-    if (relative === 2) return 'multi-seat-right';
-    return 'multi-seat-left';
+    if (relative === 0) return 'multi-seat-bottom-left';
+    if (count === 3) return relative === 1 ? 'multi-seat-top-left' : 'multi-seat-top-right';
+    if (relative === 1) return 'multi-seat-top-left';
+    if (relative === 2) return 'multi-seat-top-right';
+    return 'multi-seat-bottom-right';
   }
 
   function pluralCards(n) {
@@ -396,6 +394,26 @@
       if (img.parentElement?.classList.contains('durak-card-filter')) return;
       const wrap = document.createElement('span');
       wrap.className = 'durak-card-filter';
+      // Перекрытие карт (отрицательный margin-left) считается для самой
+      // картинки, но раз она теперь вложена в обёртку — именно обёртка
+      // занимает место в ряду #hand. Margin нужно перенести на неё,
+      // иначе он ничего не "сжимает" и веер карт вылезает за экран.
+      if (img.style.marginLeft) {
+        wrap.style.marginLeft = img.style.marginLeft;
+        img.style.marginLeft = '0';
+      }
+      // То же самое с z-index: он был нужен картинке, чтобы более поздние
+      // карты в веере перекрывали более ранние. Но если оставить z-index
+      // на самой картинке, она (начиная с 4-й карты, z-index > 3) рисуется
+      // ПОВЕРХ собственной серо/зелёной заливки "можно/нельзя ходить" —
+      // заливку становится не видно. Переносим z-index на обёртку, а с
+      // картинки снимаем — тогда заливка (она рисуется поверх картинки
+      // внутри той же обёртки) всегда видна, а нужный порядок наложения
+      // карт друг на друга сохраняется на уровне обёрток.
+      if (img.style.zIndex) {
+        wrap.style.zIndex = img.style.zIndex;
+        img.style.zIndex = '';
+      }
       img.parentNode.insertBefore(wrap, img);
       wrap.appendChild(img);
     });
@@ -425,29 +443,49 @@
     const myCards = Array.isArray(state?.myHand) ? state.myHand : [];
     if (state?.status !== 'playing' || !Number.isInteger(myIndex) || !state.turn) return;
 
+    const isDefender = myIndex === Number(state.defenderIndex ?? -1);
+    const isAttacker = myIndex !== Number(state.defenderIndex ?? -1); // In podkidnoy, all non-defenders can attack
+    const isMulti = Number(state.maxPlayers || state.playersTotal || state.players?.length || 2) > 2;
+
     let isMyTurn = false;
     let canPlay = () => false;
 
-    if (state.turn === 'attacker' && myIndex === Number(state.attackerIndex ?? -1)) {
+    if (state.turn === 'attacker' && isAttacker) {
       isMyTurn = true;
       const tableValues = Array.isArray(state.table)
         ? [...new Set(state.table.flatMap(pair => [pair.attack?.val, pair.defend?.val].filter(Boolean)))]
         : [];
       const limit = Number(state.attackLimit || 6);
       const tableLength = Array.isArray(state.table) ? state.table.length : 0;
-      // На первой атаке разрешены любые карты, включая козыри.
-      canPlay = card => tableLength === 0 || (tableLength < limit && tableValues.includes(card.val));
-    } else if (state.turn === 'defender' && myIndex === Number(state.defenderIndex ?? -1)) {
-      isMyTurn = true;
+      const hasUndefended = Array.isArray(state.table) ? state.table.some(pair => !pair.defend) : false;
+      // Джокером ходить (атаковать/подкидывать) нельзя — только защищаться им.
+      // На первой атаке (пустой стол) разрешены любые обычные карты ТОЛЬКО главному атакующему.
+      // Если есть незащищенные карты, можно подкидывать карты тех же рангов (все атакующие).
+      // Если все защищены, можно подкидывать карты тех же рангов (обычные правила подкидного).
+      canPlay = card => {
+        if (card.joker) return false;
+        if (tableLength === 0) {
+          // Only main attacker can start
+          return myIndex === Number(state.attackerIndex ?? -1);
+        }
+        return tableLength < limit && tableValues.includes(card.val);
+      };
+    } else if (isDefender) {
+      // Defender can defend anytime there are undefended cards
       const openPair = Array.isArray(state.table) ? state.table.find(pair => !pair.defend) : null;
-      canPlay = card => Boolean(openPair) && localCanDefend(openPair.attack, card, state.trumpCard?.suit);
+      if (openPair) {
+        isMyTurn = true;
+        canPlay = card => localCanDefend(openPair.attack, card, state.trumpCard?.suit);
+      }
     }
 
     if (!isMyTurn) return;
 
-    if (state.turn === 'attacker' && Array.isArray(state.table) && state.table.length === 0) {
-      return;
-    }
+    // На пустом столе (первая атака в раунде, включая джокер-режим) ничего
+    // не подсвечиваем — карты остаются обычными/белыми, без заливки:
+    // выбор карты здесь ограничен только запретом на джокер, а не рангом.
+    const tableIsEmpty = state.turn === 'attacker' && Array.isArray(state.table) && state.table.length === 0;
+    if (tableIsEmpty) return;
 
     myCards.forEach((card, index) => {
       const img = cards[index];
@@ -459,18 +497,30 @@
   }
 
   function renderPlayersAroundTable(state) {
+    const arena = $('arena');
     const table = $('table');
-    if (!table || !Array.isArray(state?.players)) return;
+    if (!arena || !table || !Array.isArray(state?.players)) return;
 
     let host = document.getElementById('multiPlayers');
     if (!host) {
       host = document.createElement('div');
       host.id = 'multiPlayers';
       host.className = 'multi-players-around';
-      table.appendChild(host);
-    } else if (host.parentElement !== table) {
-      table.appendChild(host);
+      arena.appendChild(host);
+    } else if (host.parentElement !== arena) {
+      arena.appendChild(host);
     }
+
+    // Position host to match table exactly
+    const tableRect = table.getBoundingClientRect();
+    const arenaRect = arena.getBoundingClientRect();
+    host.style.position = 'absolute';
+    host.style.left = (tableRect.left - arenaRect.left) + 'px';
+    host.style.top = (tableRect.top - arenaRect.top) + 'px';
+    host.style.width = tableRect.width + 'px';
+    host.style.height = tableRect.height + 'px';
+    host.style.pointerEvents = 'none';
+    host.style.inset = '0'; // fallback
 
     const isMulti = Number(state.maxPlayers || state.playersTotal || state.players?.length || 2) > 2;
     const game = $('game');
@@ -490,10 +540,16 @@
 
       const label = player.isMe ? 'Вы' : (player.name || `Игрок ${player.index + 1}`);
       const connected = Boolean(player.connected);
+      const isAttacker = !player.isDefender; // In podkidnoy, all non-defenders can attack
       let stateText = '🃏 В игре';
       if (!connected) stateText = '⏸️ Отключён';
       else if (player.isDefender) stateText = '🛡️ Защищается';
-      else if (state.turn === 'attacker') stateText = '⚔️ Атакует';
+      else if (isAttacker && state.turn === 'attacker') {
+        // All attackers can add cards during attack phase
+        stateText = '⚔️ Атакует';
+      } else if (isMulti) {
+        stateText = '⏳ Ждёт атаки';
+      }
 
       item.innerHTML = `
         <div class="multi-player-name"></div>
@@ -539,10 +595,30 @@
       const status = $('status');
       if (status && state.status === 'playing') {
         const isDefender = state.role === 'Защищающийся';
+        const myIndex = Number(state.myIndex);
+        const isAttackerMe = myIndex !== Number(state.defenderIndex ?? -1); // In podkidnoy, all non-defenders can attack
+        const hasUndefended = Array.isArray(state.table) ? state.table.some(pair => !pair.defend) : false;
+        
         if (state.turn === 'attacker') {
-          status.textContent = isDefender ? '🔴 Соперник атакует' : '🟢 Ваш ход — атакуйте';
-        } else if (state.turn === 'defender') {
-          status.textContent = isDefender ? '🟢 Ваш ход — защищайтесь' : '🔴 Соперник защищается';
+          if (hasUndefended) {
+            // There are undefended cards - defender needs to respond
+            if (isDefender) {
+              status.textContent = '🟢 Ваш ход — защищайтесь';
+            } else if (isAttackerMe) {
+              status.textContent = '🟢 Ваш ход — атакуйте';
+            } else {
+              status.textContent = '⏳ Ждите защиты';
+            }
+          } else {
+            // All cards defended or table empty - attacker's turn to add more or say bito
+            if (isDefender) {
+              status.textContent = '🔴 Соперник атакует';
+            } else if (isAttackerMe) {
+              status.textContent = '🟢 Ваш ход — атакуйте';
+            } else {
+              status.textContent = '⏳ Ждите атаки';
+            }
+          }
         }
       }
 

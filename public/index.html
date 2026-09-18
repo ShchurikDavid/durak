@@ -48,7 +48,7 @@
     .result-modal.result-win .result-title{color:#8bf29a}
     .result-modal.result-lose{border-color:rgba(239,83,80,.75)}
     .result-modal.result-lose .result-title{color:#ff8d8d}
-    #arena{flex:1;min-height:340px;display:grid;grid-template-columns:150px minmax(0,1fr) 175px;gap:12px;align-items:center}
+    #arena{flex:1;min-height:340px;display:grid;grid-template-columns:150px minmax(0,1fr) 175px;gap:12px;align-items:center;position:relative}
     .actions{display:flex;flex-direction:column;gap:10px}
     .btn{min-height:50px;border-radius:13px;border:1px solid transparent;font-weight:900;letter-spacing:.4px;color:#fff;cursor:pointer;transition:transform .15s,filter .15s,box-shadow .15s}
     .btn:active:not(:disabled){transform:scale(.97)}.btn:disabled{background:#222!important;border-color:#333!important;color:#666!important;cursor:not-allowed;box-shadow:none}
@@ -61,8 +61,7 @@
     .info-deck{font-size:.82rem;line-height:1.2}.info-trump{display:flex;flex-direction:column;align-items:center;gap:5px}.info-trump-label{font-size:.78rem;color:#cbd3cd}
     #deckCount{color:var(--gold);font-weight:900}#trump img{width:92px;height:calc(92px*1.4)}
     #hand{min-height:calc(var(--card-w)*1.4 + 10px);display:flex;justify-content:center;align-items:flex-end;flex-wrap:nowrap;gap:var(--gap);padding:4px 4px max(6px,env(safe-area-inset-bottom));max-width:100%}
-    #hand .card{position:relative;margin-left:calc(var(--card-w) * var(--hand-overlap) * -1);transition:transform .12s}
-    #hand .card:first-child{margin-left:0}
+    #hand .card{position:relative;transition:transform .12s}
     #hand .card:active{transform:translateY(-10px)}
     #hand .card{cursor:pointer}
     #hand.scroll{justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}#hand.scroll::-webkit-scrollbar{display:none}
@@ -407,9 +406,9 @@
       }
 
       if(roundTimerInterval)clearInterval(roundTimerInterval);
-      if(state.roundStartedAt){
-        const start=Number(state.roundStartedAt)||Date.now();
-        const updateRound=()=>{ roundEl.textContent=`⏳ Раунд: ${formatElapsed(Date.now()-start)}`; };
+      if(state.matchStartedAt){
+        const start=Number(state.matchStartedAt)||Date.now();
+        const updateRound=()=>{ roundEl.textContent=`⏳ Матч: ${formatElapsed(Date.now()-start)}`; };
         updateRound();
         roundTimerInterval=setInterval(updateRound,500);
       } else {
@@ -566,6 +565,13 @@
       cards.forEach((card,index)=>{
         const img=makeCardImg(card.code,`${card.val}${card.suit}`);
         img.style.zIndex=String(index+1);
+        // Отступ считаем прямо в JS и пишем инлайн-стилем на каждую карту.
+        // Раньше отрицательный margin вешался через CSS-селектор
+        // "#hand .card:first-child" — он ломался, когда карту оборачивал
+        // фильтр «можно/нельзя ходить» (первой становилась уже обёртка,
+        // а не сама карта), из-за чего перекрытие переставало работать
+        // и веер карт вылезал за пределы экрана на телефоне.
+        img.style.marginLeft = index===0 ? '0px' : `calc(var(--card-w) * ${overlap} * -1)`;
         img.addEventListener('click',()=>{if(!actionPending){actionPending=true;socket.emit('playCard',index)}});
         el.appendChild(img);
       });

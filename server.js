@@ -62,6 +62,7 @@ function newGameState() {
     firstRoundLimit: 5,
     turnDeadline: null,
     roundStartedAt: Date.now(),
+    matchStartedAt: Date.now(),
     winnerIndex: null,
     loserIndex: null,
     resultText: '',
@@ -199,6 +200,10 @@ function hasUndefended(room) {
   return room.game.table.some(pair => pair.defend === null);
 }
 
+function undefendedCount(room) {
+  return room.game.table.filter(pair => pair.defend === null).length;
+}
+
 function tableValues(room) {
   const values = [];
   for (const pair of room.game.table) {
@@ -220,10 +225,26 @@ function currentAttackLimit(room) {
 }
 
 function canAttack(room, index, card) {
-  if (index !== room.game.attackerIndex) return false;
+  if (index === room.game.defenderIndex) return false;
   if (room.game.turn !== 'attacker') return false;
+  // Джокером нельзя атаковать/подкидывать — он слишком силён как атака
+  // (почти нечем отбиться), поэтому джокер разрешён только для защиты.
+  if (card.joker) return false;
   if (room.game.table.length >= currentAttackLimit(room)) return false;
-  if (room.game.table.length === 0) return true;
+  if (room.game.table.length === 0) {
+    // Only the main attacker can start the attack
+    return index === room.game.attackerIndex;
+  }
+  
+  // Allow attacking if there are undefended cards (defender hasn't responded yet)
+  // or if all cards are defended (normal podkidnoy rules)
+  const hasUndefendedCards = hasUndefended(room);
+  if (hasUndefendedCards) {
+    // Can only add cards that match values already on table
+    return uniqueTableValues(room).includes(card.val);
+  }
+  
+  // All cards defended - can add new cards matching any table value
   return uniqueTableValues(room).includes(card.val);
 }
 
@@ -367,54 +388,48 @@ function handleTurnTimeout(room) {
 
   room.game.turnDeadline = null;
 
-  if (room.game.turn === 'defender') {
+  // If there are undefended cards, defender must respond (take or defend)
+  // Since turn is always 'attacker' during attack phase, we check for undefended cards
+  if (hasUndefended(room)) {
+    // Defender didn't respond in time - they take
     if (performTake(room)) {
       if (checkGameOver(room)) {
         sendGameState(room, 'gameOver');
       } else {
-        sendGameState(room, 'timeout-take');
         scheduleTurnTimer(room);
+        sendGameState(room, 'timeout-take');
       }
     }
     return;
   }
 
-  // Для атакующего при полном защищённом столе выполняем отбой.
+  // Все карты защищены - можно бито
   if (room.game.table.length > 0 && !hasUndefended(room)) {
     if (performBito(room)) {
       if (checkGameOver(room)) {
         sendGameState(room, 'gameOver');
       } else {
-        sendGameState(room, 'timeout-bito');
         scheduleTurnTimer(room);
+        sendGameState(room, 'timeout-bito');
       }
     }
     return;
   }
 
-  // На пустом столе автоматически разыгрываем допустимую первую карту.
-  // Если есть существующие ранги — выбираем случайную допустимую карту.
+  // Атакующий не походил за отведённое время (стол пуст — карта ещё не
+  // разыграна). Никакую карту за него НЕ разыгрываем — просто передаём
+  // право атаковать следующему игроку по кругу, ничего не меняя в руках.
   const attacker = room.players[room.game.attackerIndex];
   if (!attacker) return;
 
-  const legal = attacker.hand
-    .map((card, index) => ({ card, index }))
-    .filter(item => canAttack(room, room.game.attackerIndex, item.card));
+  const nextAttackerIndex = nextPlayerIndex(room, room.game.attackerIndex);
+  const nextDefenderIndex = nextPlayerIndex(room, nextAttackerIndex);
+  room.game.attackerIndex = nextAttackerIndex;
+  room.game.defenderIndex = nextDefenderIndex;
+  room.game.turn = 'attacker';
 
-  if (!legal.length) {
-    // Не зацикливаем таймер, если состояние по какой-либо причине без хода.
-    sendGameState(room, 'timeout');
-    scheduleTurnTimer(room);
-    return;
-  }
-
-  const choice = legal[Math.floor(Math.random() * legal.length)];
-  const attackCard = attacker.hand.splice(choice.index, 1)[0];
-  room.game.table.push({ attack: attackCard, defend: null });
-  room.game.turn = 'defender';
-
-  sendGameState(room, 'timeout-play');
   scheduleTurnTimer(room);
+  sendGameState(room, 'timeout-pass');
 }
 
 function startGame(room) {
@@ -422,6 +437,7 @@ function startGame(room) {
   room.game.status = 'playing';
   room.game.mode = room.mode;
   room.game.roundStartedAt = Date.now();
+  room.game.matchStartedAt = Date.now();
   room.game.deck = createDeck(room.mode);
 
   const trumpIndex = room.game.deck.findIndex(card => !card.joker);
@@ -442,8 +458,8 @@ function startGame(room) {
   determineFirstAttacker(room);
 
   room.game.turn = 'attacker';
-  sendGameState(room, 'start');
   scheduleTurnTimer(room);
+  sendGameState(room, 'start');
 }
 
 function addToDiscard(room) {
@@ -571,9 +587,10 @@ function publicStateFor(room, index, lastAction) {
     defenderIndex: room.game.defenderIndex,
     turnDeadline: room.game.turnDeadline,
     roundStartedAt: room.game.roundStartedAt,
+    matchStartedAt: room.game.matchStartedAt,
     isMyTurn: room.game.status === 'playing' &&
       ((isAttacker && room.game.turn === 'attacker') ||
-       (isDefender && room.game.turn === 'defender')),
+       (isDefender && hasUndefended(room))),
     role: isDefender ? 'Защищающийся' : 'Атакующий',
     canPass: room.game.status === 'playing' &&
       isAttacker &&
@@ -582,7 +599,6 @@ function publicStateFor(room, index, lastAction) {
       !hasUndefended(room),
     canTake: room.game.status === 'playing' &&
       isDefender &&
-      room.game.turn === 'defender' &&
       room.game.table.length > 0 &&
       hasUndefended(room),
     canRestart: room.game.status === 'finished',
@@ -804,7 +820,7 @@ io.on('connection', socket => {
     const card = player.hand[cardIndex];
     if (!card) return sendGameState(room);
 
-    if (index === room.game.defenderIndex && room.game.turn === 'defender') {
+    if (index === room.game.defenderIndex && hasUndefended(room)) {
       const pair = room.game.table.find(item => item.defend === null);
 
       if (!pair || !canDefend(pair.attack, card, room.game.trumpCard?.suit)) {
@@ -812,13 +828,17 @@ io.on('connection', socket => {
       }
 
       pair.defend = player.hand.splice(cardIndex, 1)[0];
-      room.game.turn = 'attacker';
-      sendGameState(room, 'defend');
+      // After defending, if all cards are defended, turn goes to attacker
+      // If there are still undefended cards, attacker can continue or defender can defend more
+      if (!hasUndefended(room)) {
+        room.game.turn = 'attacker';
+      }
       scheduleTurnTimer(room);
+      sendGameState(room, 'defend');
       return;
     }
 
-    if (index === room.game.attackerIndex && room.game.turn === 'attacker') {
+    if (index !== room.game.defenderIndex && room.game.turn === 'attacker') {
       if (!canAttack(room, index, card)) return sendGameState(room);
 
       const attackCard = player.hand.splice(cardIndex, 1)[0];
@@ -826,9 +846,10 @@ io.on('connection', socket => {
         attack: attackCard,
         defend: null
       });
-      room.game.turn = 'defender';
-      sendGameState(room, 'play');
+      // Keep turn as 'attacker' to allow multiple cards in sequence
+      // Defender can still defend at any time when there are undefended cards
       scheduleTurnTimer(room);
+      sendGameState(room, 'play');
       return;
     }
 
@@ -841,8 +862,11 @@ io.on('connection', socket => {
 
     const index = playerIndexBySocket(room, socket.id);
 
+    // In podkidnoy, any attacker (non-defender) can say bito when all cards are defended
+    const isAttacker = index !== room.game.defenderIndex;
+
     if (
-      index !== room.game.attackerIndex ||
+      !isAttacker ||
       room.game.turn !== 'attacker' ||
       room.game.table.length === 0 ||
       hasUndefended(room)
@@ -855,8 +879,8 @@ io.on('connection', socket => {
     if (!performBito(room)) return sendGameState(room);
 
     if (!checkGameOver(room)) {
-      sendGameState(room, 'bito');
       scheduleTurnTimer(room);
+      sendGameState(room, 'bito');
     } else {
       sendGameState(room, 'gameOver');
     }
@@ -870,7 +894,6 @@ io.on('connection', socket => {
 
     if (
       index !== room.game.defenderIndex ||
-      room.game.turn !== 'defender' ||
       room.game.table.length === 0 ||
       !hasUndefended(room)
     ) {
@@ -882,8 +905,8 @@ io.on('connection', socket => {
     if (!performTake(room)) return sendGameState(room);
 
     if (!checkGameOver(room)) {
-      sendGameState(room, 'take');
       scheduleTurnTimer(room);
+      sendGameState(room, 'take');
     } else {
       sendGameState(room, 'gameOver');
     }
