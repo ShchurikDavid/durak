@@ -1,0 +1,34 @@
+/* Keep feedback in colors, without moving controls under the pointer. */
+html { scrollbar-gutter: stable; }
+@supports not (scrollbar-gutter: stable) {
+  html { overflow-y: scroll; }
+}
+body .btn,
+body .setting-toggle,
+body .skin-card,
+body .mode-option label,
+body .player-count-option label,
+body .durak-patreon-float,
+body #hand .card {
+  transition-property: background-color, border-color, color, box-shadow !important;
+  transition-duration: .12s !important;
+}
+body .btn:hover,
+body .btn:active,
+body .durak-patreon-float:hover,
+body .durak-patreon-float:active,
+body #hand .card:hover,
+body #hand .card:active {
+  transform: none !important;
+}
+body .viewer-arrow:active { transform: translateY(-50%) !important; }
+body .result-modal { animation: none; }
+.timer-chip { font-variant-numeric: tabular-nums; }
+.timer-chip:not(.round) { min-width: 76px; }
+.timer-chip.round { min-width: 145px; }
+.timer-bar { min-height: 30px; }
+#musicVolumeValue { display:inline-block;min-width:4ch;font-variant-numeric:tabular-nums; }
+@media(max-width:600px) {
+  .timer-chip:not(.round) { min-width: 64px; }
+  .timer-chip.round { min-width: 125px; }
+}

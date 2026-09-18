@@ -78,42 +78,99 @@
       }
       .player-count-note{font-size:.7rem;color:#9fa9a2;margin-top:7px;text-align:center}
 
-      /* 3-4 player seats. They live inside the table, so there is no viewport geometry jump. */
-      .multi-players-around{
-        position:absolute;inset:0;z-index:1000;pointer-events:none;
-        display:block;
+      /* 3-4 player seats — mini badges anchored to the four corners of the
+         table. #miniSeats itself is a sibling of #table (never its child,
+         since renderTable() wipes #table's innerHTML on every update —
+         putting persistent seat markup inside it would get destroyed).
+         Its position/size is set from JS to exactly match #table's current
+         rect, so it tracks the table through every breakpoint and resize. */
+      #miniSeats{
+        position:absolute;
+        pointer-events:none;
+        z-index:1000;
       }
-      .multi-player-seat{
-        position:absolute;width:100px;min-height:67px;padding:5px 6px;
-        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-        border:1px solid rgba(212,175,55,.30);border-radius:11px;
-        background:rgba(4,12,8,.95);backdrop-filter:blur(3px);
+
+      .mini-seat{
+        position:absolute;
+        width:100px;
+        min-height:67px;
+        padding:5px 6px;
+        display:none;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:2px;
+        border:1px solid rgba(212,175,55,.30);
+        border-radius:11px;
+        background:rgba(4,12,8,.95);
+        backdrop-filter:blur(3px);
         box-shadow:0 8px 20px rgba(0,0,0,.50);
-        z-index:1001;
       }
-      .multi-player-seat.me{border-color:rgba(212,175,55,.58)}
-      .multi-player-seat.defender{border-color:rgba(219,78,78,.68);box-shadow:0 0 0 1px rgba(219,78,78,.22),0 5px 12px rgba(0,0,0,.30)}
-      .multi-seat-top-left{top:-18px;left:-18px}
-      .multi-seat-top-right{top:-18px;right:-18px}
-      .multi-seat-bottom-left{bottom:-18px;left:-18px}
-      .multi-seat-bottom-right{bottom:-18px;right:-18px}
-      .multi-player-name{width:100%;font-size:.67rem;font-weight:900;color:#fff;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .multi-backs{height:25px;display:flex;justify-content:center;align-items:center}
+
+      .mini-seat.me{
+        border-color:rgba(212,175,55,.58);
+      }
+
+      .mini-seat.defender{
+        border-color:rgba(219,78,78,.68);
+        box-shadow:0 0 0 1px rgba(219,78,78,.22),0 5px 12px rgba(0,0,0,.30);
+      }
+      .mini-seat.attacker{border-color:#72d99b}
+      .mini-seat-role{
+        font-size:.6rem;font-weight:800;line-height:1.25;
+        text-align:center;color:#bdc8c0;max-width:100%;overflow-wrap:anywhere;
+      }
+      .mini-seat.attacker .mini-seat-role{color:#94edb6}
+      .mini-seat.defender .mini-seat-role{color:#ffaaa5}
+
+      /* Corners, nudged a bit past the table's own edge so a small table
+         with just a couple of cards on it never overlaps a seat badge. */
+      .mini-seat[data-seat="0"]{bottom:-14px;left:-14px}
+      .mini-seat[data-seat="1"]{top:-14px;left:-14px}
+      .mini-seat[data-seat="2"]{top:-14px;right:-14px}
+      .mini-seat[data-seat="3"]{bottom:-14px;right:-14px}
+
+      .mini-seat-name{
+        width:100%;
+        font-size:.67rem;
+        font-weight:900;
+        color:#fff;
+        text-align:center;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      .mini-seat-backs{
+        height:25px;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+      }
+
       .mini-back{
-        width:17px;height:24px;flex:0 0 auto;border-radius:3px;border:1px solid #fff;
+        width:17px;
+        height:24px;
+        flex:0 0 auto;
+        border-radius:3px;
+        border:1px solid #fff;
         background:url('/cards/bicycle-classic/backs/red.png') center/cover no-repeat;
-        margin-left:-7px;box-shadow:0 2px 4px rgba(0,0,0,.45)
+        margin-left:-7px;
+        box-shadow:0 2px 4px rgba(0,0,0,.45);
       }
-      .mini-back:first-child{margin-left:0}
-      .multi-player-state{font-size:.57rem;font-weight:800;color:#c7cfca;text-align:center;line-height:1.05;white-space:nowrap}
-      .multi-player-seat.defender .multi-player-state{color:#ff9c9c}
-      .multi-player-seat:not(.defender) .multi-player-state.attacking{color:#b9edbd}
-      .mini-count{font-size:.55rem;color:var(--gold);font-weight:900;line-height:1}
+
+      .mini-back:first-child{ margin-left:0; }
+
+      .mini-seat-count{
+        font-size:.55rem;
+        color:var(--gold);
+        font-weight:900;
+        line-height:1;
+      }
 
       /* No player seats/panels in a 2-player game. Original opponent backs stay visible. */
-      #game.durak-2p #multiPlayers{display:none!important}
+      #game.durak-2p #miniSeats{display:none!important}
       #game.durak-mp #opponent,#game.durak-mp .opponent-label{display:none!important}
-
 
       /* Room badge: own row, always centered and never clipped by the status layout. */
       .durak-room-header{
@@ -159,6 +216,7 @@
           min-height:0!important;
           width:100%;
           position:relative;
+          overflow:visible!important;
         }
         #game #table{
           grid-area:table!important;
@@ -176,17 +234,16 @@
         #game .info{grid-area:info!important;min-width:0;min-height:62px!important;padding:6px!important;overflow:hidden}
         #game #trump img{width:48px!important;height:67px!important}
         #game #hand{width:100%;min-height:0;padding-top:3px}
-        #game .multi-players-around{inset:0;z-index:1000}
-        #game .multi-player-seat{width:82px;min-height:57px;padding:4px 5px;z-index:1001}
-        #game .multi-seat-top-left{top:-18px;left:-18px}
-        #game .multi-seat-top-right{top:-18px;right:-18px}
-        #game .multi-seat-bottom-left{bottom:-18px;left:-18px}
-        #game .multi-seat-bottom-right{bottom:-18px;right:-18px}
-        #game .multi-player-name{font-size:.57rem}
-        #game .multi-player-state{font-size:.5rem}
+        #game #miniSeats{z-index:1000}
+        #game .mini-seat{width:82px;min-height:57px;padding:4px 5px}
+        #game .mini-seat[data-seat="0"]{bottom:-10px;left:-10px}
+        #game .mini-seat[data-seat="1"]{top:-10px;left:-10px}
+        #game .mini-seat[data-seat="2"]{top:-10px;right:-10px}
+        #game .mini-seat[data-seat="3"]{bottom:-10px;right:-10px}
+        #game .mini-seat-name{font-size:.57rem}
         #game .mini-back{width:14px;height:20px;margin-left:-6px}
-        #game .multi-backs{height:21px}
-        #game .mini-count{font-size:.48rem}
+        #game .mini-seat-backs{height:21px}
+        #game .mini-seat-count{font-size:.48rem}
 
         /* Hide the desktop versions while keeping Bito/Take/New game in their original area. */
         #shareRoom,#leave{display:none!important}
@@ -194,9 +251,8 @@
 
       @media(max-width:380px){
         #game #table{aspect-ratio:1.58 / 1!important}
-        #game .multi-player-seat{width:72px;min-height:52px}
-        #game .multi-player-name{font-size:.52rem}
-        #game .multi-player-state{font-size:.45rem}
+        #game .mini-seat{width:72px;min-height:52px}
+        #game .mini-seat-name{font-size:.52rem}
         #game .mini-back{width:12px;height:17px;margin-left:-5px}
         .mobile-top-actions .btn{font-size:.64rem}
       }
@@ -274,6 +330,53 @@
       @media(max-width:600px){
         #status{font-size:.94rem!important}
       }
+
+      /* Keep game overlays inside the arena, below every modal. */
+      #game #arena{isolation:isolate}
+      #game #miniSeats{z-index:10}
+      .durak-patreon-float,#music{z-index:20}
+      .result-modal{max-height:calc(100dvh - 32px);overflow-y:auto}
+      #resultLeave{background:#252525;border-color:#555;color:#fff}
+
+      @media(max-width:600px), (max-height:500px) and (orientation:landscape){
+        /* A separate row leaves the entire table available for six pairs. */
+        #game #arena{
+          grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+          grid-template-areas:"seats seats" "table table" "actions info"!important;
+          grid-template-rows:auto auto auto!important;
+          align-content:start;
+        }
+        #game #miniSeats{
+          position:relative!important;grid-area:seats;
+          left:auto!important;top:auto!important;
+          width:100%!important;height:auto!important;
+          display:grid!important;
+          grid-template-columns:repeat(var(--seat-count,3),minmax(0,1fr));
+          gap:5px;z-index:1;
+        }
+        #game.durak-2p #miniSeats{display:none!important}
+        #game .mini-seat{
+          position:static!important;width:auto!important;min-width:0;
+          min-height:52px!important;padding:4px!important;
+          box-shadow:none;
+        }
+        #game #table{
+          display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));
+          grid-auto-rows:auto;align-content:center;align-items:center;
+          gap:8px!important;padding:18px 14px!important;
+          aspect-ratio:auto!important;min-height:210px!important;max-height:none!important;
+          border-radius:24px!important;overflow:visible!important;
+        }
+        #game #table::before{border-radius:17px!important}
+        #game #table .pair{
+          width:min(100%,110px);height:auto;aspect-ratio:1 / 1.4;min-width:0;justify-self:center;
+        }
+        #game #table .card{width:80%;height:80%;border-radius:5px}
+        #game #table .defend{top:20%;left:20%;transform:none}
+      }
+      @media(max-height:500px) and (orientation:landscape){
+        #game #table .pair{width:min(100%,74px)}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -344,18 +447,6 @@
 
     $('mobileShare').onclick = () => $('shareRoom')?.click();
     $('mobileLeave').onclick = () => $('leave')?.click();
-  }
-
-  function seatClassesForPlayers(players, player) {
-    const count = players.length;
-    const myIndex = Math.max(0, players.findIndex(p => p.isMe));
-    const relative = (players.indexOf(player) - myIndex + count) % count;
-
-    if (relative === 0) return 'multi-seat-bottom-left';
-    if (count === 3) return relative === 1 ? 'multi-seat-top-left' : 'multi-seat-top-right';
-    if (relative === 1) return 'multi-seat-top-left';
-    if (relative === 2) return 'multi-seat-top-right';
-    return 'multi-seat-bottom-right';
   }
 
   function pluralCards(n) {
@@ -455,7 +546,7 @@
       const tableValues = Array.isArray(state.table)
         ? [...new Set(state.table.flatMap(pair => [pair.attack?.val, pair.defend?.val].filter(Boolean)))]
         : [];
-      const limit = Number(state.attackLimit || 6);
+      const limit = Number(state.attackLimit ?? 6);
       const tableLength = Array.isArray(state.table) ? state.table.length : 0;
       const hasUndefended = Array.isArray(state.table) ? state.table.some(pair => !pair.defend) : false;
       // Джокером ходить (атаковать/подкидывать) нельзя — только защищаться им.
@@ -464,6 +555,7 @@
       // Если все защищены, можно подкидывать карты тех же рангов (обычные правила подкидного).
       canPlay = card => {
         if (card.joker) return false;
+        if (tableLength >= limit) return false;
         if (tableLength === 0) {
           // Only main attacker can start
           return myIndex === Number(state.attackerIndex ?? -1);
@@ -496,79 +588,147 @@
     });
   }
 
-  function renderPlayersAroundTable(state) {
+  function ensureMiniSeats() {
     const arena = $('arena');
     const table = $('table');
-    if (!arena || !table || !Array.isArray(state?.players)) return;
+    if (!arena || !table) return null;
 
-    let host = document.getElementById('multiPlayers');
-    if (!host) {
-      host = document.createElement('div');
-      host.id = 'multiPlayers';
-      host.className = 'multi-players-around';
-      arena.appendChild(host);
-    } else if (host.parentElement !== arena) {
-      arena.appendChild(host);
+    let root = document.getElementById('miniSeats');
+    if (!root) {
+      // #miniSeats must be a SIBLING of #table, never its child: renderTable()
+      // wipes #table's innerHTML on every state update, which would destroy
+      // persistent seat markup placed inside it.
+      root = document.createElement('div');
+      root.id = 'miniSeats';
+      for (let seat = 0; seat < 4; seat++) {
+        const item = document.createElement('div');
+        item.className = 'mini-seat';
+        item.dataset.seat = String(seat);
+        item.innerHTML = `
+          <div class="mini-seat-name"></div>
+          <div class="mini-seat-role"></div>
+          <div class="mini-seat-backs"></div>
+          <div class="mini-seat-count"></div>
+        `;
+        root.appendChild(item);
+      }
+      arena.appendChild(root);
+    } else if (root.parentElement !== arena) {
+      arena.appendChild(root);
     }
+    return root;
+  }
 
-    // Position host to match table exactly
+  function positionMiniSeats(root, table) {
+    const arena = $('arena');
+    if (!root || !table || !arena) return;
     const tableRect = table.getBoundingClientRect();
     const arenaRect = arena.getBoundingClientRect();
-    host.style.position = 'absolute';
-    host.style.left = (tableRect.left - arenaRect.left) + 'px';
-    host.style.top = (tableRect.top - arenaRect.top) + 'px';
-    host.style.width = tableRect.width + 'px';
-    host.style.height = tableRect.height + 'px';
-    host.style.pointerEvents = 'none';
-    host.style.inset = '0'; // fallback
+    root.style.left = (tableRect.left - arenaRect.left) + 'px';
+    root.style.top = (tableRect.top - arenaRect.top) + 'px';
+    root.style.width = tableRect.width + 'px';
+    root.style.height = tableRect.height + 'px';
+  }
+
+  // Right when the game view first appears (or when a new player joins and
+  // the layout reflows: opponent panel hides, hand/arena resize, etc.), a
+  // synchronous getBoundingClientRect() read can land a frame too early and
+  // capture a stale/mid-transition box — the seats then cluster near the
+  // table's old (e.g. hidden-state) position until some later event happens
+  // to remeasure. A ResizeObserver watches #table's real rendered geometry
+  // directly and repositions the seats the moment it actually changes,
+  // including that very first layout pass, so there's no wrong-then-correct
+  // flash to chase.
+  let tableResizeObserver = null;
+  function ensureTableResizeObserver(table) {
+    if (tableResizeObserver || typeof ResizeObserver === 'undefined') return;
+    tableResizeObserver = new ResizeObserver(() => {
+      const root = document.getElementById('miniSeats');
+      const currentTable = $('table');
+      if (root && currentTable) positionMiniSeats(root, currentTable);
+    });
+    tableResizeObserver.observe(table);
+  }
+
+  function participantRole(state, player) {
+    if (!player.connected) return { label: 'Нет связи', kind: '' };
+    if (state.status === 'waiting') return { label: 'Ожидает', kind: '' };
+    if (state.status === 'paused') return { label: 'Пауза', kind: '' };
+    if (state.status === 'finished') return {
+      label: state.loserIndex == null ? 'Ничья' : state.loserIndex === player.index ? 'Проиграл' : 'Победил', kind: ''
+    };
+    const table = state.table || [];
+    if (!player.cardCount && !state.deckCount && !table.length) return { label: 'Закончил', kind: '' };
+    if (player.index === state.defenderIndex) return {
+      label: table.some(pair => !pair.defend) ? 'Отбивается' : 'Защищается', kind: 'defender'
+    };
+    if (player.index === state.attackerIndex) return { label: 'Ходит', kind: 'attacker' };
+    return { label: table.length && player.cardCount ? 'Подкидывает' : 'Ожидает', kind: '' };
+  }
+
+  function renderPlayersAroundTable(state) {
+    const table = $('table');
+    if (!table || !Array.isArray(state?.players)) return;
+
+    const root = ensureMiniSeats();
+    if (!root) return;
+    root.style.setProperty('--seat-count', String(state.players.length || 3));
+    positionMiniSeats(root, table);
+    ensureTableResizeObserver(table);
 
     const isMulti = Number(state.maxPlayers || state.playersTotal || state.players?.length || 2) > 2;
     const game = $('game');
     game.classList.toggle('durak-mp', isMulti);
     game.classList.toggle('durak-2p', !isMulti);
 
-    if (!isMulti) {
-      host.innerHTML = '';
-      return;
-    }
+    root.style.display = isMulti ? 'block' : 'none';
+    if (!isMulti) return;
 
-    host.innerHTML = '';
-    const players = state.players.slice(0, 4);
-    players.forEach(player => {
-      const item = document.createElement('div');
-      item.className = `multi-player-seat ${seatClassesForPlayers(players, player)}${player.isMe ? ' me' : ''}${player.isDefender ? ' defender' : ''}`;
+    const seats = [...root.querySelectorAll('.mini-seat')];
+    const players = [...state.players];
+    const myIndex = players.findIndex(p => p.isMe);
 
-      const label = player.isMe ? 'Вы' : (player.name || `Игрок ${player.index + 1}`);
-      const connected = Boolean(player.connected);
-      const isAttacker = !player.isDefender; // In podkidnoy, all non-defenders can attack
-      let stateText = '🃏 В игре';
-      if (!connected) stateText = '⏸️ Отключён';
-      else if (player.isDefender) stateText = '🛡️ Защищается';
-      else if (isAttacker && state.turn === 'attacker') {
-        // All attackers can add cards during attack phase
-        stateText = '⚔️ Атакует';
-      } else if (isMulti) {
-        stateText = '⏳ Ждёт атаки';
+    seats.forEach(seat => {
+      seat.classList.remove('me', 'defender', 'attacker');
+      const seatIndex = Number(seat.dataset.seat || 0);
+      let player = null;
+
+      if (players.length > 0) {
+        // нормальное распределение по углам стола
+        const order = [];
+        for (let i = 0; i < players.length; i++) {
+          const rel = (i - myIndex + players.length) % players.length;
+          order.push({ rel, player: players[i] });
+        }
+        const found = order.find(item => item.rel === seatIndex);
+        if (found) player = found.player;
       }
 
-      item.innerHTML = `
-        <div class="multi-player-name"></div>
-        <div class="multi-backs"></div>
-        <div class="mini-count"></div>
-        <div class="multi-player-state"></div>
-      `;
-      item.querySelector('.multi-player-name').textContent = label;
-      item.querySelector('.mini-count').textContent = `${player.cardCount ?? 0} ${pluralCards(player.cardCount)}`;
-      item.querySelector('.multi-player-state').textContent = stateText;
+      if (!player) {
+        seat.style.display = 'none';
+        return;
+      }
 
-      const backs = item.querySelector('.multi-backs');
-      const count = Math.min(6, Math.max(0, Number(player.cardCount) || 0));
-      for (let i = 0; i < count; i++) {
+      seat.style.display = 'flex';
+      seat.classList.toggle('me', Boolean(player.isMe));
+      const role = participantRole(state, player);
+      if (role.kind) seat.classList.add(role.kind);
+      seat.querySelector('.mini-seat-role').textContent = role.label;
+
+      const name = seat.querySelector('.mini-seat-name');
+      const count = seat.querySelector('.mini-seat-count');
+      const backs = seat.querySelector('.mini-seat-backs');
+
+      name.textContent = player.isMe ? 'Вы' : (player.name || `Игрок ${player.index + 1}`);
+      const cards = Number(player.cardCount || 0);
+      count.textContent = `${cards} ${pluralCards(cards)}`;
+
+      backs.innerHTML = '';
+      for (let i = 0; i < Math.min(cards, 6); i++) {
         const back = document.createElement('span');
         back.className = 'mini-back';
         backs.appendChild(back);
       }
-      host.appendChild(item);
     });
   }
 
@@ -591,36 +751,9 @@
         }
       }
 
-      // Нормализуем формулировки верхнего статуса для более понятного интерфейса.
+      // Сервер учитывает очередь первого хода и игроков, закончивших карты.
       const status = $('status');
-      if (status && state.status === 'playing') {
-        const isDefender = state.role === 'Защищающийся';
-        const myIndex = Number(state.myIndex);
-        const isAttackerMe = myIndex !== Number(state.defenderIndex ?? -1); // In podkidnoy, all non-defenders can attack
-        const hasUndefended = Array.isArray(state.table) ? state.table.some(pair => !pair.defend) : false;
-        
-        if (state.turn === 'attacker') {
-          if (hasUndefended) {
-            // There are undefended cards - defender needs to respond
-            if (isDefender) {
-              status.textContent = '🟢 Ваш ход — защищайтесь';
-            } else if (isAttackerMe) {
-              status.textContent = '🟢 Ваш ход — атакуйте';
-            } else {
-              status.textContent = '⏳ Ждите защиты';
-            }
-          } else {
-            // All cards defended or table empty - attacker's turn to add more or say bito
-            if (isDefender) {
-              status.textContent = '🔴 Соперник атакует';
-            } else if (isAttackerMe) {
-              status.textContent = '🟢 Ваш ход — атакуйте';
-            } else {
-              status.textContent = '⏳ Ждите атаки';
-            }
-          }
-        }
-      }
+      if (status && state.statusText) status.textContent = state.statusText;
 
       window.setTimeout(() => {
         prepareCardFilterOverlays();

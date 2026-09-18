@@ -1,0 +1,20 @@
+.ui-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  min-width: 18px;
+  min-height: 18px;
+  vertical-align: -0.2em;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.logo .ui-icon { width: 1em; height: 1em; }
+#music .ui-icon { width: 24px; height: 24px; }
+#music::before { content: none !important; }
+#lobbyMusic { display:inline-flex;align-items:center;justify-content:center;gap:8px;width:190px;flex:0 0 190px; }
+#music { width:44px;height:44px; }
+#music span:empty { display:none; }
+#lobbyMusic, #music, #settingsMusic, #settingsSounds { transition:background-color .15s,border-color .15s; }
+body button[aria-pressed="true"] { background:#25553a!important;border-color:#79cc93!important;color:#f2fff5!important; }
+body button[aria-pressed="false"] { background:#493038!important;border-color:#b9818a!important;color:#ffe9ec!important; }
+.logo .logo-fan { width:1.45em;height:1.15em;vertical-align:-.18em; }

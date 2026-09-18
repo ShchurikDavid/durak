@@ -72,7 +72,7 @@ function newGameState() {
 
 function normalizeMode(value) {
   const mode = String(value || DEFAULT_MODE);
-  return MODE_CONFIG[mode] ? mode : DEFAULT_MODE;
+  return Object.hasOwn(MODE_CONFIG, mode) ? mode : DEFAULT_MODE;
 }
 
 function normalizePlayerCount(value) {
@@ -102,6 +102,9 @@ function createRoom(payload = {}) {
   };
 
   rooms.set(code, room);
+  room.emptyTimer = setTimeout(() => {
+    if (room.players.length === 0) removeRoom(room);
+  }, RECONNECT_GRACE_MS);
   broadcastRoomList();
   return room;
 }
@@ -136,7 +139,8 @@ function nextPlayerIndex(room, fromIndex) {
 
   for (let step = 1; step <= total; step++) {
     const index = (fromIndex + step) % total;
-    if (room.players[index]?.socketId) return index;
+    const player = room.players[index];
+    if (player?.socketId && (room.game.deck.length > 0 || player.hand.length > 0)) return index;
   }
   return fromIndex;
 }
@@ -220,11 +224,14 @@ function uniqueTableValues(room) {
 function currentAttackLimit(room) {
   const defender = room.players[room.game.defenderIndex];
   const defenderHand = defender ? defender.hand.length : HAND_SIZE;
-  const roundLimit = room.game.roundNumber === 0 ? 5 : 6;
-  return Math.min(roundLimit, defenderHand || roundLimit);
+  const defendedCount = room.game.table.filter(pair => pair.defend !== null).length;
+  const roundLimit = room.game.discard.length === 0 ? room.game.firstRoundLimit : HAND_SIZE;
+  // Уже сыгранные карты защиты тоже входят в руку на начало захода.
+  return Math.min(roundLimit, defenderHand + defendedCount);
 }
 
 function canAttack(room, index, card) {
+  if (!room.players[index] || !card) return false;
   if (index === room.game.defenderIndex) return false;
   if (room.game.turn !== 'attacker') return false;
   // Джокером нельзя атаковать/подкидывать — он слишком силён как атака
@@ -266,10 +273,11 @@ function canDefend(attack, defend, trumpSuit) {
   return defend.suit === trumpSuit && attack.suit !== trumpSuit;
 }
 
-function drawOrderAfterRound(room, newAttackerIndex) {
-  // Подкидной порядок добора: новый атакующий первым,
-  // затем остальные по кругу, защищавшийся — последним.
-  return orderedPlayerIndexes(room, newAttackerIndex);
+function drawOrderAfterRound(room, firstIndex) {
+  // Начинавший атаку добирает первым, защищавшийся — последним.
+  const defender = room.game.defenderIndex;
+  return orderedPlayerIndexes(room, firstIndex)
+    .filter(index => index !== defender).concat(defender);
 }
 
 function dealCards(room, firstIndex = room.game.attackerIndex) {
@@ -329,8 +337,10 @@ function performBito(room) {
   const oldDefender = room.game.defenderIndex;
   addToDiscard(room);
   room.game.table = [];
+  dealCards(room);
 
-  const newAttacker = oldDefender;
+  const newAttacker = room.players[oldDefender].hand.length > 0
+    ? oldDefender : nextPlayerIndex(room, oldDefender);
   const newDefender = nextPlayerIndex(room, newAttacker);
 
   room.game.attackerIndex = newAttacker;
@@ -339,7 +349,6 @@ function performBito(room) {
   room.game.roundStartedAt = Date.now();
   room.game.turn = 'attacker';
 
-  dealCards(room, newAttacker);
   return true;
 }
 
@@ -360,6 +369,7 @@ function performTake(room) {
   }
 
   room.game.table = [];
+  dealCards(room);
 
   const newAttacker = nextPlayerIndex(room, defenderIndex);
   const newDefender = nextPlayerIndex(room, newAttacker);
@@ -370,7 +380,6 @@ function performTake(room) {
   room.game.roundStartedAt = Date.now();
   room.game.turn = 'attacker';
 
-  dealCards(room, newAttacker);
   return true;
 }
 
@@ -528,18 +537,24 @@ function publicStateFor(room, index, lastAction) {
   let statusText = `🟡 Игроков ${connectedCount}/${room.maxPlayers}`;
 
   if (room.game.status === 'playing') {
+    // Раньше здесь проверялось room.game.turn === 'defender', но в текущей
+    // модели (любой не-защищающийся может подкинуть карту в любой момент)
+    // ход 'turn' всегда остаётся 'attacker' — 'defender' никогда не
+    // выставляется. Поэтому статус защищающегося раньше ВСЕГДА показывал
+    // "Соперник защищается", даже когда реально нужно было защищаться
+    // самому. Определяем состояние через hasUndefended(), как и остальная
+    // логика игры.
+    const hasOpenDefense = hasUndefended(room);
     if (isDefender) {
-      statusText = room.game.turn === 'defender'
+      statusText = hasOpenDefense
         ? '🟢 Ваш ход — защищайтесь'
-        : '🔴 Соперник защищается';
-    } else if (isAttacker) {
-      statusText = room.game.turn === 'attacker'
-        ? '🟢 Ваш ход — атакуйте'
-        : '🔴 Соперник защищается';
+        : '🔴 Соперник атакует';
+    } else if (me.hand.length === 0 && room.game.deck.length === 0) {
+      statusText = '🏆 Вы закончили карты — ждите окончания игры';
+    } else if (isAttacker || room.game.table.length > 0) {
+      statusText = '🟢 Ваш ход — атакуйте';
     } else {
-      statusText = room.game.turn === 'attacker'
-        ? '🟡 Идёт атака'
-        : '🟡 Идёт защита';
+      statusText = '⏳ Ждите атаки';
     }
   }
 
@@ -589,11 +604,10 @@ function publicStateFor(room, index, lastAction) {
     roundStartedAt: room.game.roundStartedAt,
     matchStartedAt: room.game.matchStartedAt,
     isMyTurn: room.game.status === 'playing' &&
-      ((isAttacker && room.game.turn === 'attacker') ||
-       (isDefender && hasUndefended(room))),
+      (isDefender ? hasUndefended(room) : me.hand.some(card => canAttack(room, index, card))),
     role: isDefender ? 'Защищающийся' : 'Атакующий',
     canPass: room.game.status === 'playing' &&
-      isAttacker &&
+      !isDefender &&
       room.game.turn === 'attacker' &&
       room.game.table.length > 0 &&
       !hasUndefended(room),
@@ -601,7 +615,7 @@ function publicStateFor(room, index, lastAction) {
       isDefender &&
       room.game.table.length > 0 &&
       hasUndefended(room),
-    canRestart: room.game.status === 'finished',
+    canRestart: room.game.status === 'finished' && allPlayersPresent(room),
     attackRanks,
     attackCount: room.game.table.length,
     attackLimit,
@@ -654,6 +668,8 @@ function sendLobby(socket, message = '') {
 
 function removeRoom(room) {
   if (!rooms.has(room.code)) return;
+  clearTurnTimer(room);
+  clearTimeout(room.emptyTimer);
   for (const timer of room.reconnectTimers.values()) clearTimeout(timer);
   room.reconnectTimers.clear();
   rooms.delete(room.code);
@@ -718,12 +734,8 @@ function joinRoom(socket, payload) {
     typeof payload === 'object' ? payload?.roomCode : ''
   );
 
-  if (!userId) {
+  if (typeof userId !== 'string' || !userId.trim() || userId.length > 128) {
     return socket.emit('roomError', 'Не удалось определить игрока.');
-  }
-
-  if (socket.data.roomCode && socket.data.roomCode !== requestedCode) {
-    leaveCurrentRoom(socket, 'switch');
   }
 
   const room = rooms.get(requestedCode);
@@ -732,6 +744,15 @@ function joinRoom(socket, payload) {
   }
 
   let player = room.players.find(p => p.userId === userId);
+  if (!player && room.players.length >= room.maxPlayers) {
+    return socket.emit('roomError', `Комната уже заполнена (${room.maxPlayers}/${room.maxPlayers}).`);
+  }
+  if (socket.data.roomCode === requestedCode && socket.data.userId !== userId) {
+    return socket.emit('roomError', 'Вы уже вошли в эту комнату.');
+  }
+  if (socket.data.roomCode && socket.data.roomCode !== requestedCode) {
+    leaveCurrentRoom(socket, 'switch');
+  }
 
   if (player) {
     if (player.socketId && player.socketId !== socket.id) {
@@ -763,6 +784,8 @@ function joinRoom(socket, payload) {
   }
 
   socket.data.roomCode = room.code;
+  clearTimeout(room.emptyTimer);
+  room.emptyTimer = null;
   socket.data.userId = userId;
   socket.join(room.code);
 
@@ -770,6 +793,7 @@ function joinRoom(socket, payload) {
     startGame(room);
   } else if (room.game.status === 'paused' && allPlayersPresent(room)) {
     room.game.status = 'playing';
+    scheduleTurnTimer(room);
     sendGameState(room, 'reconnect');
   } else {
     sendGameState(room, 'reconnect');
@@ -863,7 +887,7 @@ io.on('connection', socket => {
     const index = playerIndexBySocket(room, socket.id);
 
     // In podkidnoy, any attacker (non-defender) can say bito when all cards are defended
-    const isAttacker = index !== room.game.defenderIndex;
+    const isAttacker = index >= 0 && index !== room.game.defenderIndex;
 
     if (
       !isAttacker ||
@@ -927,8 +951,8 @@ io.on('connection', socket => {
     if (room.game.status === 'playing') {
       clearTurnTimer(room);
       room.game.status = 'paused';
-      sendGameState(room, 'disconnect');
     }
+    sendGameState(room, 'disconnect');
 
     const timer = setTimeout(() => {
       const currentRoom = rooms.get(roomCode);

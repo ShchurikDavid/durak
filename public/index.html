@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07130d">
+  <link rel="stylesheet" href="/ui-icons.css">
+  <link rel="stylesheet" href="/layout-stability.css">
   <title>Дурак — комнаты</title>
   <style>
     :root {
@@ -96,7 +98,7 @@
 </head>
 <body>
   <main id="lobby">
-    <div class="logo">🃏 Дурак</div>
+    <div class="logo"><img class="ui-icon logo-fan" src="/icons/cards-fan.svg" alt=""> Дурак</div>
     <div class="subtitle">Создай комнату на сайте и пригласи соперника по ссылке</div>
     <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><button id="lobbyMusic" class="btn room-music" type="button">🔊 Музыка: вкл.</button><button id="openSkins" class="btn room-skin" type="button">🃏 Колода</button><button id="openSettings" class="btn room-settings" type="button">⚙️ Настройки</button></div>
 
@@ -167,7 +169,7 @@
       <div class="setting-row"><div class="setting-label">🔉 Громкость музыки<span class="setting-sub">Текущая громкость: <b id="musicVolumeValue">3%</b></span></div><div class="setting-control"><input id="musicVolume" class="setting-range" type="range" min="0" max="100" step="1"></div></div>
       <div class="setting-row"><div class="setting-label">🔈 Громкость звуков<span class="setting-sub">Громкость эффектов</span></div><div class="setting-control"><input id="soundVolume" class="setting-range" type="range" min="0" max="100" step="1"></div></div>
       <div class="setting-row"><div class="setting-label">🃏 Скин колоды<span class="setting-sub">Внешний вид карт и рубашки</span></div><div class="setting-control"><button id="settingsSkin" class="setting-toggle" type="button">Выбрать</button></div></div>
-      <div class="setting-row"><div class="setting-label">🎨 Тема интерфейса<span class="setting-sub">Меняется только у тебя</span></div><div class="setting-control"><select id="themeSelect" class="theme-select"><option value="dark">🌙 Тёмная</option><option value="blue">🔵 Синяя</option><option value="light">☀️ Светлая</option></select></div></div>
+      <div class="setting-row"><div class="setting-label">🎨 Тема интерфейса<span class="setting-sub">Меняется только у тебя</span></div><div class="setting-control"><select id="themeSelect" class="theme-select" aria-label="Тема интерфейса"><option value="dark">Тёмная</option><option value="blue">Синяя</option><option value="light">Светлая</option></select></div></div>
       <button id="closeSettings" class="btn settings-close" type="button">Закрыть</button>
     </section>
   </div>
@@ -206,12 +208,27 @@
     bgMusic.volume=musicVolume/100;
     function applyTheme(){document.body.classList.remove('theme-light','theme-blue');if(theme!=='dark')document.body.classList.add('theme-'+theme)}
     applyTheme();
+    function updateMusicButton(id, label){
+      const button=$(id);
+      let icon=button.querySelector('img');
+      if(!icon){
+        icon=document.createElement('img');icon.className='ui-icon';icon.alt='';
+        button.replaceChildren(icon,document.createElement('span'));
+      }
+      const src='/icons/'+(musicOn?'sound-on':'sound-off')+'.svg';
+      if(icon.getAttribute('src')!==src)icon.setAttribute('src',src);
+      const text=button.querySelector('span');
+      if(text && text.textContent!==label)text.textContent=label;
+      button.setAttribute('aria-pressed',String(musicOn));
+    }
     function updateMusicButtons(){
-      $('music').textContent=musicOn?'🔊':'🔇';
-      $('lobbyMusic').textContent=musicOn?'🔊 Музыка: вкл.':'🔇 Музыка: выкл.';
-      $('lobbyMusic').setAttribute('aria-pressed',String(musicOn));
+      updateMusicButton('music','');
+      updateMusicButton('lobbyMusic',musicOn?'Музыка: вкл.':'Музыка: выкл.');
+      $('music').setAttribute('aria-label',musicOn?'Выключить музыку':'Включить музыку');
       if($('settingsMusic')) $('settingsMusic').textContent=musicOn?'Вкл.':'Выкл.';
       if($('settingsSounds')) $('settingsSounds').textContent=soundsOn?'Вкл.':'Выкл.';
+      $('settingsMusic').setAttribute('aria-pressed',String(musicOn));
+      $('settingsSounds').setAttribute('aria-pressed',String(soundsOn));
       if($('musicVolume')) $('musicVolume').value=musicVolume;
       if($('soundVolume')) $('soundVolume').value=soundVolume;
       if($('musicVolumeValue')) $('musicVolumeValue').textContent=musicVolume+'%';
@@ -221,7 +238,11 @@
 
     function getUserId(){
       let id=localStorage.getItem('durak_user_id');
-      if(!id){id='user_'+crypto.randomUUID();localStorage.setItem('durak_user_id',id)}
+      if(!id){
+        const bytes=crypto.getRandomValues(new Uint8Array(16));
+        id='user_'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+        localStorage.setItem('durak_user_id',id);
+      }
       return id;
     }
     const userId=getUserId();
@@ -287,25 +308,29 @@
         if(type==='bito'||type==='take'){hit(now,.28);hit(now+.05,.28);hit(now+.10,.28)}else hit(now,.42);
       }catch(_){}
     }
+    let musicRequest=0;
     async function toggleMusic(){
+      const request=++musicRequest;
+      musicOn=!musicOn;
+      localStorage.setItem('durak_music',musicOn?'on':'off');
+      updateMusicButtons();
+      bgMusic.volume=musicVolume/100;
+      if(!musicOn){bgMusic.pause();return}
       try{
-        if(musicOn){
-          bgMusic.pause();
-          musicOn=false;
-        }else{
-          ensureAudio();
-          await bgMusic.play();
-          musicOn=true;
-        }
-        bgMusic.volume=musicVolume/100;
-        localStorage.setItem('durak_music',musicOn?'on':'off');
+        ensureAudio();
+        await bgMusic.play();
+      }catch(_){
+        if(request!==musicRequest)return;
+        musicOn=false;
+        localStorage.setItem('durak_music','off');
         updateMusicButtons();
-      }catch(_){}
+      }
     }
     $('music').addEventListener('click',()=>{ensureAudio();toggleMusic()});
     $('lobbyMusic').addEventListener('click',()=>{ensureAudio();toggleMusic()});
-    document.addEventListener('pointerdown',()=>{
+    document.addEventListener('pointerdown',event=>{
       ensureAudio();
+      if(event.target.closest('#music,#lobbyMusic,#settingsMusic'))return;
       if(musicOn&&bgMusic.paused)bgMusic.play().catch(()=>{});
     },{once:true});
 
@@ -318,7 +343,8 @@
       $('roomBadge').textContent='Комната '+code;
       setRoomInUrl(code);
       localStorage.setItem('durak_room_code',code);
-      hideResultModal();
+      if(currentState?.status==='finished')showResultModal(currentState);
+      else hideResultModal();
     }
     async function shareText(text, fallbackText){
       try{
@@ -328,7 +354,7 @@
         }
         await navigator.clipboard.writeText(text);
         showToast(fallbackText || 'Ссылка скопирована!');
-      }catch(_){}
+      }catch(error){if(error?.name!=='AbortError')window.prompt('Скопируйте ссылку:',text)}
     }
 
     function roomInviteUrl(code){
@@ -339,12 +365,13 @@
       history.replaceState(null,'',location.pathname);
       localStorage.removeItem('durak_room_code');
       currentState=null; actionPending=false;
+      clearInterval(turnTimerInterval);clearInterval(roundTimerInterval);
       hideResultModal();
     }
 
     socket.on('connect',()=>{
       actionPending=false;
-      const remembered=localStorage.getItem('durak_room_code')||roomFromUrl();
+      const remembered=roomFromUrl()||localStorage.getItem('durak_room_code');
       if(remembered) socket.emit('joinRoom',{userId,name:getName(),roomCode:remembered});
       socket.emit('getRooms');
     });
@@ -354,7 +381,7 @@
     socket.on('roomError',msg=>{
       // Раньше код несуществующей комнаты оставался в localStorage, и клиент
       // пытался войти в неё при каждом переподключении.
-      localStorage.removeItem('durak_room_code');
+      if(currentState===null)localStorage.removeItem('durak_room_code');
       showToast(msg);
       if(currentState===null)enterLobby();
     });
@@ -467,7 +494,7 @@
     $('settingsBackdrop').addEventListener('click',e=>{if(e.target===$('settingsBackdrop'))$('settingsBackdrop').classList.add('hidden')});
     $('settingsMusic').onclick=()=>{ensureAudio();toggleMusic()};
     $('settingsSounds').onclick=()=>{soundsOn=!soundsOn;localStorage.setItem('durak_sounds',soundsOn?'on':'off');updateMusicButtons();if(soundsOn)playSound('click')};
-    $('musicVolume').oninput=e=>{musicVolume=Number(e.target.value);bgMusic.volume=musicVolume/100;localStorage.setItem('durak_music_volume',musicVolume);if(musicVolume===0&&musicOn){bgMusic.pause()}else if(musicVolume>0&&musicOn&&bgMusic.paused){bgMusic.play().catch(()=>{})};updateMusicButtons()};
+    $('musicVolume').oninput=e=>{musicVolume=Number(e.target.value);bgMusic.volume=musicVolume/100;localStorage.setItem('durak_music_volume',musicVolume);updateMusicButtons()};
     $('soundVolume').oninput=e=>{soundVolume=Number(e.target.value);localStorage.setItem('durak_sound_volume',soundVolume);updateMusicButtons()};
     $('themeSelect').onchange=e=>{theme=e.target.value;localStorage.setItem('durak_theme',theme);applyTheme();updateMusicButtons()};
     $('shareLobby').onclick=()=>shareText(location.href,'Ссылка на игру скопирована!');
@@ -572,7 +599,7 @@
         // а не сама карта), из-за чего перекрытие переставало работать
         // и веер карт вылезал за пределы экрана на телефоне.
         img.style.marginLeft = index===0 ? '0px' : `calc(var(--card-w) * ${overlap} * -1)`;
-        img.addEventListener('click',()=>{if(!actionPending){actionPending=true;socket.emit('playCard',index)}});
+        img.addEventListener('click',()=>{if(socket.connected&&currentState?.status==='playing'&&!actionPending){actionPending=true;socket.emit('playCard',index)}});
         el.appendChild(img);
       });
     }
@@ -600,5 +627,6 @@
     });
   </script>
   <script src="/durak-enhancements.js"></script>
+  <script src="/ui-icons.js"></script>
 </body>
 </html>
