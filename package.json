@@ -2,14 +2,42 @@
   "name": "durak-lan-game",
   "version": "3.0.0",
   "private": true,
-  "description": "Двухпользовательский Дурак с комнатами, LAN и Cloudflare Tunnel",
+  "description": "Подкидной Дурак на 2–4 игроков: комнаты, LAN и Cloudflare Tunnel",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "lint": "eslint server.js src public/js mobile/bluetooth-host.js mobile/local-game.js mobile/hand-layout.js mobile/table-layout.js test eslint.config.cjs babel.config.js metro.config.js react-native.config.js",
+    "format": "prettier --write --ignore-path .prettierignore mobile babel.config.js metro.config.js react-native.config.js server.js src public/js public/css public/index.html test docs README.md package.json eslint.config.cjs .prettierrc.json",
+    "format:check": "prettier --check --ignore-path .prettierignore mobile babel.config.js metro.config.js react-native.config.js server.js src public/js public/css public/index.html test docs README.md package.json eslint.config.cjs .prettierrc.json",
+    "check": "npm run lint && npm run format:check && npm run mobile:typecheck && npm test",
+    "mobile:start": "react-native start",
+    "mobile:typecheck": "tsc -p mobile/tsconfig.json"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "express": "^4.19.2",
-    "socket.io": "^4.7.5"
+    "google-auth-library": "^11.1.0",
+    "react": "19.2.3",
+    "react-native": "0.87.1",
+    "react-native-safe-area-context": "^5.10.1",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/runtime": "^7.29.7",
+    "@react-native-community/cli": "20.2.0",
+    "@react-native-community/cli-platform-android": "20.2.0",
+    "@react-native/babel-preset": "0.87.1",
+    "@react-native/metro-config": "0.87.1",
+    "@types/react": "^19.3.0",
+    "eslint": "^10.11.0",
+    "globals": "^16.5.0",
+    "prettier": "^3.9.9",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

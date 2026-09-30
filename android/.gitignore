@@ -1,0 +1,10 @@
+.gradle/
+.cxx/
+**/.cxx/
+**/build/
+local.properties
+.idea/
+*.iml
+*.jks
+*.keystore
+/rn-config-check.json

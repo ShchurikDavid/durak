@@ -1,2 +1,7 @@
 /node_modules
-/package-lock.json
+/.idea/
+/artifacts/
+/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

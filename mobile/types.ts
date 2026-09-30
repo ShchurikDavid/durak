@@ -1,0 +1,62 @@
+export type Card = { val: string; suit: string; code: string; joker?: boolean };
+export type Player = {
+  index: number;
+  name: string;
+  connected: boolean;
+  cardCount: number;
+  isMe: boolean;
+  isAttacker: boolean;
+  isDefender: boolean;
+  surrendered: boolean;
+};
+export type GameState = {
+  lastAction?: string;
+  local?: boolean;
+  bluetooth?: boolean;
+  roomCode: string;
+  status: string;
+  statusText: string;
+  role: string;
+  myHand: Card[];
+  players: Player[];
+  table: { attack: Card; defend: Card | null }[];
+  playableCardIndexes?: number[];
+  transferCardIndexes: number[];
+  canTransfer: boolean;
+  deckCount: number;
+  discardCount: number;
+  trumpCard: Card | null;
+  gameModeLabel: string;
+  gameTypeLabel: string;
+  canPass: boolean;
+  canTake: boolean;
+  canRestart: boolean;
+  canSurrender: boolean;
+  resultText: string;
+  loserIndex: number | null;
+  myIndex: number;
+  roundNumber: number;
+  turnDeadline: number | null;
+  timeout: {
+    active: boolean;
+    canVote: boolean;
+    voted: boolean;
+    votes: number;
+    required: number;
+    deadline: number | null;
+  };
+};
+export type Room = {
+  code: string;
+  players: number;
+  maxPlayers: number;
+  modeLabel: string;
+  gameTypeLabel: string;
+};
+export type User = { id: string; login: string; name: string };
+export type Options = { mode: string; maxPlayers: number; gameType: string };
+export type Session = {
+  send(event: string, payload?: unknown): void;
+  dispose(): void;
+  rename?(name: string): void;
+};

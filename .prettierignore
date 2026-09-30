@@ -1,0 +1,5 @@
+node_modules
+public/cards
+public/icons
+mobile/assets
+package-lock.json

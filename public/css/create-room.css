@@ -1,0 +1,216 @@
+.create-room-dialog {
+  width: min(520px, calc(100% - 24px));
+  max-height: calc(100dvh - 32px);
+  padding: 24px;
+  color: #eef7eb;
+  background: #0b1811;
+  border: 1px solid var(--gold2);
+  border-radius: 20px;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px #0009;
+}
+.create-room-dialog::backdrop {
+  background: #000b;
+}
+.account-form {
+  display: grid;
+  gap: 12px;
+}
+.account-form label {
+  display: grid;
+  gap: 8px;
+}
+.account-form label.hidden {
+  display: none;
+}
+.account-form input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #56665b;
+  border-radius: 10px;
+  color: #eef7eb;
+  background: #16261c;
+  font: inherit;
+}
+.account-form input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.account-form .btn:not(.primary) {
+  background: #29352e;
+  border-color: #56665b;
+}
+.account-form p {
+  margin: 0;
+}
+.password-field {
+  position: relative;
+}
+.password-field input {
+  padding-right: 52px;
+}
+.password-field .password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #bac7bd;
+  cursor: pointer;
+}
+.password-toggle:hover {
+  color: var(--gold);
+}
+.password-toggle:focus-visible {
+  outline: 2px solid var(--gold);
+}
+.password-toggle .eye-slash {
+  display: none;
+}
+.password-toggle[aria-pressed='true'] .eye-slash {
+  display: block;
+}
+.google-signin {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.form-error {
+  color: #ffb4ab;
+}
+.account-panel {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(20px, env(safe-area-inset-right));
+  max-width: calc(100% - 80px);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 7px;
+  text-align: right;
+}
+#lobby {
+  padding-top: max(108px, calc(env(safe-area-inset-top) + 92px));
+}
+#accountStatus {
+  max-width: 260px;
+  font-size: 12px;
+  color: #b7c2b9;
+  overflow-wrap: anywhere;
+}
+.account-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 1px solid #d4af3766;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #24392c, #101e16);
+  color: #f4dc87;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow:
+    0 5px 18px #0004,
+    inset 0 1px 0 #ffffff0d;
+  cursor: pointer;
+  transition:
+    border-color 160ms,
+    background 160ms,
+    box-shadow 160ms;
+}
+.account-button svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.account-button:hover {
+  border-color: var(--gold2);
+  background: #294231;
+  box-shadow: 0 5px 22px #0005;
+}
+.account-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+.account-button:active {
+  background: #13271a;
+}
+@media (max-width: 600px) {
+  .account-panel {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+  }
+  .account-button {
+    padding: 9px 12px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+}
+.settings-name-form {
+  margin-bottom: 16px;
+}
+.settings-modal {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+#gameSettings {
+  display: block;
+  margin: 16px auto;
+}
+.create-room-dialog h2 {
+  margin: 0 0 22px;
+  color: var(--gold);
+  text-align: center;
+}
+.create-room-dialog fieldset {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.create-room-dialog legend {
+  margin-bottom: 10px;
+  font-weight: 800;
+}
+.create-room-dialog .mode-grid {
+  margin: 0;
+}
+.create-room-dialog .mode-option input:focus-visible + label {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.create-room-hint {
+  color: #bac7bd;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.create-room-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+.create-room-actions .btn {
+  flex: 1;
+  padding: 10px;
+}
+#cancelCreateRoom {
+  background: #29352e;
+  border-color: #56665b;
+}
+@media (max-width: 380px) {
+  .create-room-dialog {
+    padding: 16px;
+  }
+}

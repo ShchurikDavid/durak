@@ -1,0 +1,594 @@
+/* Patreon: just the white logo in the corner, no big banner in-game/lobby. */
+.durak-patreon-float {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 1000;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #0b0b0b;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.35);
+  transition:
+    transform 0.15s,
+    filter 0.15s;
+}
+.durak-patreon-float:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+.durak-patreon-float img {
+  width: 25px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Lobby player count */
+.player-count-wrap {
+  margin-top: 10px;
+}
+.player-count-title {
+  font-weight: 900;
+  color: var(--gold);
+  margin: 0 0 9px;
+}
+.player-count-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.player-count-option {
+  position: relative;
+}
+.player-count-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.player-count-option label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.15s;
+  text-align: center;
+}
+.player-count-option input:checked + label {
+  border-color: var(--gold);
+  background: rgba(212, 175, 55, 0.14);
+  color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.25) inset;
+}
+.player-count-note {
+  font-size: 0.7rem;
+  color: #9fa9a2;
+  margin-top: 7px;
+  text-align: center;
+}
+
+/* 3-4 player seats — mini badges anchored to the four corners of the
+         table. #miniSeats itself is a sibling of #table (never its child,
+         since renderTable() wipes #table's innerHTML on every update —
+         putting persistent seat markup inside it would get destroyed).
+         Its position/size is set from JS to exactly match #table's current
+         rect, so it tracks the table through every breakpoint and resize. */
+#miniSeats {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.mini-seat {
+  position: absolute;
+  width: 100px;
+  min-height: 67px;
+  padding: 5px 6px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 11px;
+  background: rgba(4, 12, 8, 0.95);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.mini-seat.me {
+  border-color: rgba(212, 175, 55, 0.58);
+}
+
+.mini-seat.defender {
+  border-color: rgba(219, 78, 78, 0.68);
+  box-shadow:
+    0 0 0 1px rgba(219, 78, 78, 0.22),
+    0 5px 12px rgba(0, 0, 0, 0.3);
+}
+.mini-seat.attacker {
+  border-color: #72d99b;
+}
+.mini-seat-role {
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  color: #bdc8c0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.mini-seat.attacker .mini-seat-role {
+  color: #94edb6;
+}
+.mini-seat.defender .mini-seat-role {
+  color: #ffaaa5;
+}
+
+/* Corners, nudged a bit past the table's own edge so a small table
+         with just a couple of cards on it never overlaps a seat badge. */
+.mini-seat[data-seat='0'] {
+  bottom: -14px;
+  left: -14px;
+}
+.mini-seat[data-seat='1'] {
+  top: -14px;
+  left: -14px;
+}
+.mini-seat[data-seat='2'] {
+  top: -14px;
+  right: -14px;
+}
+.mini-seat[data-seat='3'] {
+  bottom: -14px;
+  right: -14px;
+}
+
+.mini-seat-name {
+  width: 100%;
+  font-size: 0.67rem;
+  font-weight: 900;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-seat-backs {
+  height: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mini-back {
+  width: 17px;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  border: 1px solid #fff;
+  background: url('/cards/bicycle-classic/backs/red.png') center/cover no-repeat;
+  margin-left: -7px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.mini-back:first-child {
+  margin-left: 0;
+}
+
+.mini-seat-count {
+  font-size: 0.55rem;
+  color: var(--gold);
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* No player seats/panels in a 2-player game. Original opponent backs stay visible. */
+#game.durak-2p #miniSeats {
+  display: none !important;
+}
+#game.durak-mp #opponent,
+#game.durak-mp .opponent-label {
+  display: none !important;
+}
+
+/* Room badge: own row, always centered and never clipped by the status layout. */
+.durak-room-header {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 52px 0;
+  position: relative;
+  z-index: 5;
+}
+#game .top #roomBadge {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+  max-width: min(92vw, 520px) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 auto !important;
+  text-align: center;
+  z-index: auto;
+}
+#game > .durak-room-header #roomBadge {
+  position: static !important;
+  display: block;
+  max-width: min(92vw, 520px) !important;
+  padding: 7px 12px;
+}
+
+/* Mobile top actions: invite + exit immediately below the status bar. */
+.mobile-top-actions {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .durak-patreon-float {
+    left: 8px;
+    top: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+  }
+  .durak-patreon-float img {
+    width: 22px;
+    height: 23px;
+  }
+  .player-count-grid {
+    gap: 6px;
+  }
+  .player-count-option label {
+    min-height: 45px;
+    font-size: 0.78rem;
+  }
+
+  #game > .durak-room-header {
+    min-height: 50px;
+    padding: 6px 8px 2px;
+  }
+  #game > .durak-room-header #roomBadge {
+    max-width: calc(100vw - 26px) !important;
+    font-size: 0.78rem;
+    padding: 7px 10px;
+  }
+  #game .top {
+    min-height: 54px;
+  }
+  .mobile-top-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    width: 100%;
+    margin: 1px 0 2px;
+  }
+  .mobile-top-actions .btn {
+    min-height: 42px;
+    font-size: 0.72rem;
+  }
+  .mobile-top-actions #mobileShare {
+    background: linear-gradient(135deg, #1976d2, #0d47a1);
+    border-color: #42a5f5;
+  }
+  .mobile-top-actions #mobileLeave {
+    background: #252525;
+    border-color: #555;
+  }
+
+  /* Stable mobile arena: table always keeps one aspect ratio instead of min-height fighting the viewport. */
+  #game #arena {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-rows: auto auto;
+    grid-template-areas: 'table table' 'actions info';
+    gap: 7px !important;
+    align-items: center;
+    min-height: 0 !important;
+    width: 100%;
+    position: relative;
+    overflow: visible !important;
+  }
+  #game #table {
+    grid-area: table !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    aspect-ratio: 1.72 / 1 !important;
+    padding: 9px !important;
+    border-width: 6px !important;
+    border-radius: 28% / 20% !important;
+    overflow: hidden !important;
+  }
+  #game #table::before {
+    inset: 5px !important;
+    border-radius: 28% / 20% !important;
+  }
+  #game .actions {
+    grid-area: actions !important;
+    min-width: 0;
+    gap: 7px;
+  }
+  #game .info {
+    grid-area: info !important;
+    min-width: 0;
+    min-height: 62px !important;
+    padding: 6px !important;
+    overflow: hidden;
+  }
+  #game #trump img {
+    width: 48px !important;
+    height: 67px !important;
+  }
+  #game #hand {
+    width: 100%;
+    min-height: 0;
+    padding-top: 3px;
+  }
+  #game #miniSeats {
+    z-index: 1000;
+  }
+  #game .mini-seat {
+    width: 82px;
+    min-height: 57px;
+    padding: 4px 5px;
+  }
+  #game .mini-seat[data-seat='0'] {
+    bottom: -10px;
+    left: -10px;
+  }
+  #game .mini-seat[data-seat='1'] {
+    top: -10px;
+    left: -10px;
+  }
+  #game .mini-seat[data-seat='2'] {
+    top: -10px;
+    right: -10px;
+  }
+  #game .mini-seat[data-seat='3'] {
+    bottom: -10px;
+    right: -10px;
+  }
+  #game .mini-seat-name {
+    font-size: 0.57rem;
+  }
+  #game .mini-back {
+    width: 14px;
+    height: 20px;
+    margin-left: -6px;
+  }
+  #game .mini-seat-backs {
+    height: 21px;
+  }
+  #game .mini-seat-count {
+    font-size: 0.48rem;
+  }
+
+  /* Hide the desktop versions while keeping Bito/Take/New game in their original area. */
+  #shareRoom,
+  #leave {
+    display: none !important;
+  }
+}
+
+@media (max-width: 380px) {
+  #game #table {
+    aspect-ratio: 1.58 / 1 !important;
+  }
+  #game .mini-seat {
+    width: 72px;
+    min-height: 52px;
+  }
+  #game .mini-seat-name {
+    font-size: 0.52rem;
+  }
+  #game .mini-back {
+    width: 12px;
+    height: 17px;
+    margin-left: -5px;
+  }
+  .mobile-top-actions .btn {
+    font-size: 0.64rem;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  #game #arena {
+    grid-template-columns: 100px minmax(0, 1fr) 110px !important;
+    grid-template-areas: none;
+    display: grid !important;
+    min-height: 0 !important;
+  }
+  #game #table {
+    grid-area: auto !important;
+    aspect-ratio: 1.85 / 1 !important;
+    max-height: 62vh;
+  }
+  #game .actions,
+  #game .info {
+    grid-area: auto !important;
+  }
+}
+
+/* Card filters: a visible translucent film over the card, never card opacity. */
+#game #hand .durak-card-filter {
+  position: relative;
+  display: block;
+  line-height: 0;
+  width: var(--card-w);
+  height: calc(var(--card-w) * 1.4);
+  flex: 0 0 var(--card-w);
+  min-width: var(--card-w);
+  min-height: calc(var(--card-w) * 1.4);
+  vertical-align: bottom;
+  overflow: visible;
+}
+#game #hand .durak-card-filter::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: 8px;
+  opacity: 0;
+  transition:
+    opacity 0.14s ease,
+    background 0.14s ease;
+}
+#game #hand .durak-card-filter.can::after {
+  opacity: 1;
+  background: rgba(174, 232, 184, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(190, 244, 198, 0.28);
+}
+#game #hand .durak-card-filter.cant::after {
+  opacity: 1;
+  background: rgba(86, 94, 88, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(120, 128, 122, 0.14);
+}
+/* На ПК серую заливку "нельзя ходить" делаем заметнее — на большом
+         экране прежней прозрачности не хватало, чтобы отличить карты
+         с первого взгляда. На телефоне оставляем как было. */
+@media (min-width: 601px) {
+  #game #hand .durak-card-filter.cant::after {
+    background: rgba(40, 44, 42, 0.52);
+    box-shadow: inset 0 0 0 1px rgba(120, 128, 122, 0.22);
+  }
+}
+#game #hand .durak-card-filter .card {
+  display: block;
+}
+#game #hand .durak-card-can,
+#game #hand .durak-card-cant {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Mobile hand: let the same overlap system as desktop do the work —
+         the JS-computed overlap (now applied to this very wrapper, see
+         prepareCardFilterOverlays) already shrinks the row to fit any
+         card count. We only need to make sure nothing wraps to a new line
+         and that if overlap alone still isn't enough, cards scroll instead
+         of being clipped off-screen (never overflow:hidden here). */
+@media (max-width: 900px) {
+  #game #hand {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 600px) {
+  #status {
+    font-size: 0.94rem !important;
+  }
+}
+
+/* Keep game overlays inside the arena, below every modal. */
+#game #arena {
+  isolation: isolate;
+}
+#game #miniSeats {
+  z-index: 10;
+}
+.durak-patreon-float,
+#music {
+  z-index: 20;
+}
+.result-modal {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+#resultLeave {
+  background: #252525;
+  border-color: #555;
+  color: #fff;
+}
+
+@media (max-width: 600px), (max-height: 500px) and (orientation: landscape) {
+  /* A separate row leaves the entire table available for six pairs. */
+  #game #arena {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas: 'seats seats' 'table table' 'actions info' !important;
+    grid-template-rows: auto auto auto !important;
+    align-content: start;
+  }
+  #game #miniSeats {
+    position: relative !important;
+    grid-area: seats;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(var(--seat-count, 3), minmax(0, 1fr));
+    gap: 5px;
+    z-index: 1;
+  }
+  #game.durak-2p #miniSeats {
+    display: none !important;
+  }
+  #game .mini-seat {
+    position: static !important;
+    width: auto !important;
+    min-width: 0;
+    min-height: 52px !important;
+    padding: 4px !important;
+    box-shadow: none;
+  }
+  #game #table {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: auto;
+    align-content: center;
+    align-items: center;
+    gap: 8px !important;
+    padding: 18px 14px !important;
+    aspect-ratio: auto !important;
+    min-height: 210px !important;
+    max-height: none !important;
+    border-radius: 24px !important;
+    overflow: visible !important;
+  }
+  #game #table::before {
+    border-radius: 17px !important;
+  }
+  #game #table .pair {
+    width: min(100%, 110px);
+    height: auto;
+    aspect-ratio: 1 / 1.4;
+    min-width: 0;
+    justify-self: center;
+  }
+  #game #table .card {
+    width: 80%;
+    height: 80%;
+    border-radius: 5px;
+  }
+  #game #table .defend {
+    top: 20%;
+    left: 20%;
+    transform: none;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #game #table .pair {
+    width: min(100%, 74px);
+  }
+}

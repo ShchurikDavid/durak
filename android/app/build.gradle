@@ -1,0 +1,29 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'com.facebook.react'
+react {
+    entryFile = file('../../mobile/index.js')
+    debuggableVariants = []
+    autolinkLibrariesWithApp()
+}
+android {
+    namespace 'com.durak.game'
+    compileSdk rootProject.ext.compileSdkVersion
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    defaultConfig {
+        applicationId 'com.durak.game'
+        minSdkVersion 26
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 7
+        versionName '2.5'
+    }
+    buildTypes {
+        debug { }
+        release { minifyEnabled false }
+    }
+}
+dependencies {
+    implementation('com.facebook.react:react-android')
+    implementation('com.facebook.react:hermes-android')
+}

@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-native",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["react"],
+    "lib": ["esnext"],
+    "resolveJsonModule": true
+  },
+  "include": ["./**/*.ts", "./**/*.tsx"]
+}
