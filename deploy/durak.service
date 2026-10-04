@@ -1,0 +1,25 @@
+[Unit]
+Description=Durak game server
+After=network.target
+
+[Service]
+Type=simple
+User=durak
+Group=durak
+WorkingDirectory=/opt/durak/current
+EnvironmentFile=/etc/durak.env
+ExecStart=/usr/local/bin/node /opt/durak/current/server.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+UMask=0077
+StateDirectory=durak
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/durak
+
+[Install]
+WantedBy=multi-user.target

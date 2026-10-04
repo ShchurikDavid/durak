@@ -153,6 +153,7 @@ export class NetworkGame {
       this.listeners.profile(data.user, data.name);
     });
     socket.on('authExpired', () => {
+      if (this.changingAccount) return;
       this.listeners.profile(null);
       this.room = '';
       this.listeners.closed();
@@ -174,12 +175,18 @@ export class NetworkGame {
     }
     this.socket.emit(event, payload);
   }
+  private changingAccount = false;
   async account(action: 'login' | 'register' | 'logout', body: object) {
     if (this.room) throw new Error('Сначала выйдите из комнаты');
-    const data = await this.request(action, body);
-    this.name = data.user?.name || this.name;
-    this.listeners.profile(data.user, this.name);
-    this.openSocket();
+    this.changingAccount = true;
+    try {
+      const data = await this.request(action, body);
+      this.name = data.user?.name || this.name;
+      this.listeners.profile(data.user, this.name);
+      this.openSocket();
+    } finally {
+      this.changingAccount = false;
+    }
   }
   async rename(name: string) {
     const data = await this.request('name', { name });

@@ -33,7 +33,11 @@ function registerSocketHandlers(io, service) {
 
     socket.on('getRooms', () => sendLobby(socket));
 
+    let lastRoomCreated = 0;
     socket.on('createRoom', (payload) => {
+      if (rooms.size >= 500 || Date.now() - lastRoomCreated < 5000)
+        return socket.emit('roomError', 'Слишком много комнат. Попробуйте позже.');
+      lastRoomCreated = Date.now();
       const room = createRoom(payload);
       socket.emit('roomCreated', { code: room.code });
     });

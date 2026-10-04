@@ -131,7 +131,11 @@ test('accounts, cookie sessions, nickname updates, logout and persistence', asyn
     const loggedIn = await request('login', credentials);
     assert.equal(loggedIn.status, 200);
     const loginCookie = cookieOf(loggedIn);
+    const active = await connect(loginCookie);
+    const expired = active.next('authExpired');
     assert.equal((await request('logout', {}, loginCookie)).status, 200);
+    await expired;
+    active.close();
     assert.equal((await (await request('me', undefined, loginCookie)).json()).user, null);
     for (let i = 0; i < 21; i++) await request('login', { login: 'x', password: '' });
     assert.equal((await request('login', credentials)).status, 429);

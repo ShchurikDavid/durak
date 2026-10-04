@@ -9,9 +9,27 @@ const { randomUUID } = require('node:crypto');
 
 function createApplication(options = {}) {
   const app = express();
+  app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // Never serve server code, credentials, databases or build artifacts.
+    if (
+      /(?:^|\/)(?:\.[^/]+|data|src|deploy|artifacts|node_modules)(?:\/|$)|\.(?:sqlite(?:-wal|-shm)?|db|pem|key|env|map)$/i.test(
+        req.path
+      )
+    )
+      return res.sendStatus(404);
+    next();
+  });
+  // Only the local reverse proxy is trusted; Nginx overwrites forwarded headers.
+  if (options.trustProxy ?? process.env.TRUST_PROXY === 'loopback')
+    app.set('trust proxy', 'loopback');
   const server = http.createServer(app);
   const io = new Server(server, {
     transports: ['websocket', 'polling'],
+    maxHttpBufferSize: 16 * 1024,
     allowRequest: (req, done) => {
       try {
         done(null, !req.headers.origin || new URL(req.headers.origin).host === req.headers.host);
@@ -20,7 +38,16 @@ function createApplication(options = {}) {
       }
     }
   });
-  const auth = createAuth(options);
+  const auth = createAuth({
+    ...options,
+    onSessionRevoked(tokenHash) {
+      for (const socket of io.sockets.sockets.values()) {
+        if (socket.data.sessionHash !== tokenHash) continue;
+        socket.emit('authExpired');
+        socket.disconnect(true);
+      }
+    }
+  });
   app.get('/api/health', (_req, res) => res.json({ app: 'durak', status: 'ok' }));
   app.use(express.json({ limit: '16kb' }));
   auth.install(app, (identity) => {
@@ -38,8 +65,28 @@ function createApplication(options = {}) {
   });
   io.use((socket, next) => {
     const identity = auth.lookup(socket.request);
+    socket.data.sessionHash = identity?.token_hash;
+    if (identity) {
+      const expiry = setInterval(() => {
+        if (auth.lookup(socket.request)) return;
+        socket.emit('authExpired');
+        socket.disconnect(true);
+      }, 1000);
+      expiry.unref();
+      socket.once('disconnect', () => clearInterval(expiry));
+    }
+    let windowStart = Date.now();
+    let packetCount = 0;
     socket.data.identity = identity || { player_id: `guest:${randomUUID()}` };
     socket.use((packet, proceed) => {
+      if (Date.now() - windowStart >= 1000) {
+        windowStart = Date.now();
+        packetCount = 0;
+      }
+      if (++packetCount > 30) {
+        socket.disconnect(true);
+        return;
+      }
       const currentIdentity = auth.lookup(socket.request);
       if (identity && !currentIdentity) {
         socket.emit('authExpired');

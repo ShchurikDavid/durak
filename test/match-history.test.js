@@ -112,10 +112,17 @@ test('account history is private, persists results and rejects another account o
     hand: []
   }));
   app.service.engine.startGame(room);
+  // An offline upload must not reserve the ID of an authoritative online result.
+  const collision = { ...record, id: `${room.game.matchId}:0`, result: 'win' };
+  assert.equal(
+    (await request('history', a.cookie, { userId: a.user.id, record: collision })).status,
+    200
+  );
   app.service.engine.finishGame(room, 0, 'Поражение');
   app.service.sendGameState(room);
   app.service.sendGameState(room);
-  assert.equal((await read(a.cookie)).length, 2);
+  assert.equal((await read(a.cookie)).length, 3);
+  assert.equal((await read(a.cookie)).find((item) => item.mode === 'Онлайн').result, 'loss');
   assert.equal((await read(b.cookie))[0].result, 'win');
   await request('logout', a.cookie, {});
   assert.equal((await request('history', a.cookie)).status, 401);

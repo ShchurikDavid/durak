@@ -5,6 +5,14 @@ const { randomBytes, randomUUID, scrypt, timingSafeEqual, createHash } = require
 const { promisify } = require('node:util');
 const derive = promisify(scrypt);
 const hash = (value) => createHash('sha256').update(value).digest('hex');
+function validOrigin(origin, host) {
+  try {
+    const url = new URL(origin);
+    return ['http:', 'https:'].includes(url.protocol) && url.host === host;
+  } catch {
+    return false;
+  }
+}
 const lifetime = 30 * 24 * 60 * 60 * 1000;
 const { installGoogleAuth } = require('./google-auth');
 const { matchRecord } = require('./game/match-history');
@@ -12,7 +20,8 @@ const { matchRecord } = require('./game/match-history');
 function createAuth({
   databasePath = process.env.DATABASE_PATH || path.join(__dirname, '../data/durak.sqlite'),
   googleClientId = process.env.GOOGLE_CLIENT_ID || '',
-  verifyGoogleToken
+  verifyGoogleToken,
+  onSessionRevoked = () => {}
 } = {}) {
   if (databasePath !== ':memory:') mkdirSync(path.dirname(databasePath), { recursive: true });
   const db = new DatabaseSync(databasePath);
@@ -41,14 +50,19 @@ function createAuth({
     played_at INTEGER NOT NULL, record TEXT NOT NULL,
     PRIMARY KEY (user_id, match_id)
   )`);
-  function saveMatch(userId, record) {
+  db.exec('CREATE INDEX IF NOT EXISTS history_date ON match_history(user_id, played_at)');
+  function saveMatch(userId, record, source = 'online') {
     if (!record) return;
     db.prepare('INSERT OR IGNORE INTO match_history VALUES (?, ?, ?, ?)').run(
       userId,
-      record.id,
+      `${source}:${record.id}`,
       record.date,
       JSON.stringify(record)
     );
+    db.prepare(
+      `DELETE FROM match_history WHERE user_id=? AND match_id NOT IN
+      (SELECT match_id FROM match_history WHERE user_id=? ORDER BY played_at DESC LIMIT 500)`
+    ).run(userId, userId);
   }
   function recordState(playerId, state) {
     if (!playerId?.startsWith('account:')) return;
@@ -72,6 +86,7 @@ function createAuth({
       .get(hash(token(req)), Date.now());
   }
   function issue(req, res, user) {
+    onSessionRevoked(hash(token(req)));
     const value = randomBytes(32).toString('hex');
     db.prepare('DELETE FROM sessions WHERE expires_at<=? OR token_hash=?').run(
       Date.now(),
@@ -88,14 +103,30 @@ function createAuth({
   }
   const publicUser = (s) => (s?.user_id ? { id: s.user_id, login: s.login, name: s.name } : null);
   const attempts = new Map();
+  const requests = new Map();
+  let requestWindow = Date.now();
+  let requestCount = 0;
   function install(app, onNameChanged = () => {}) {
     app.use('/api/auth', (req, res, next) => {
       res.setHeader('Cache-Control', 'no-store');
+      const now = Date.now();
+      if (now - requestWindow >= 60000) {
+        requestWindow = now;
+        requestCount = 0;
+        requests.clear();
+      }
+      const count = (requests.get(req.ip) || 0) + 1;
+      // Bound both per-client traffic and the limiter's own memory.
+      if (++requestCount > 10000 || count > 600) {
+        res.setHeader('Retry-After', '60');
+        return res.status(429).json({ error: 'Слишком много запросов. Повторите позже.' });
+      }
+      requests.set(req.ip, count);
       if (req.method === 'POST') {
         const origin = req.get('origin');
         if (
           req.get('sec-fetch-site') === 'cross-site' ||
-          (origin && new URL(origin).host !== req.get('host'))
+          (origin && !validOrigin(origin, req.get('host')))
         )
           return res.status(403).json({ error: 'Запрос с другого сайта запрещён.' });
         if (!req.is('application/json')) return res.status(415).json({ error: 'Ожидается JSON.' });
@@ -128,6 +159,7 @@ function createAuth({
         !r ||
         req.body.userId !== identity.user_id ||
         typeof r.id !== 'string' ||
+        !r.id.trim() ||
         r.id.length > 150 ||
         !Number.isSafeInteger(r.date) ||
         r.date <= 0 ||
@@ -140,15 +172,19 @@ function createAuth({
         r.rules.length > 100
       )
         return res.status(400).json({ error: 'Некорректный результат матча.' });
-      saveMatch(identity.user_id, {
-        id: r.id,
-        date: r.date,
-        result: r.result,
-        mode: r.mode,
-        opponents: r.opponents,
-        rules: r.rules,
-        surrendered: Boolean(r.surrendered)
-      });
+      saveMatch(
+        identity.user_id,
+        {
+          id: r.id,
+          date: r.date,
+          result: r.result,
+          mode: r.mode,
+          opponents: r.opponents,
+          rules: r.rules,
+          surrendered: Boolean(r.surrendered)
+        },
+        'offline'
+      );
       res.json({ ok: true });
     });
     app.post('/api/auth/name', (req, res) => {
