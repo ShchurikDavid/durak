@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
+  Easing,
   Image,
+  Linking,
   AppState,
   BackHandler,
   Modal,
@@ -13,14 +16,23 @@ import {
   Text,
   TextInput,
   View,
-  Vibration,
   KeyboardAvoidingView
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createLocalGame } from './local-game';
-import { NetworkGame, serverAddress } from './network';
+import { tapHaptic } from './haptics';
+import {
+  matchRecord,
+  readHistory,
+  addMatch,
+  historySummary,
+  resultLabels
+} from '../src/game/match-history';
+import { DEFAULT_SERVER, NetworkGame } from './network';
 import { BluetoothGame, type Device } from './bluetooth';
+import { BluetoothIcon } from './BluetoothIcon';
+import { animateLayout, MotionProvider, ReducedMotion } from './motion';
 import type { Card, GameState, Options, Room, Session, User } from './types';
 import { s, colors } from './styles';
 import { backs, faces, skins, skinNames, type Skin } from './cards';
@@ -28,10 +40,33 @@ import { handLayout } from './hand-layout';
 import { tableLayout } from './table-layout';
 import { configureAudio, defaultAudio, playSound, stopAudio, type AudioSettings } from './audio';
 const SkinContext = createContext<Skin>('bicycle-classic');
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const suits: Record<string, string> = { S: '♠\uFE0E', H: '♥\uFE0E', D: '♦\uFE0E', C: '♣\uFE0E' };
 const suitNames: Record<string, string> = { S: 'Пики', H: 'Червы', D: 'Бубны', C: 'Трефы' };
 const defaults: Options = { mode: '36', maxPlayers: 2, gameType: 'throwIn' };
+const PATREON_URL = 'https://www.patreon.com/cw/Durakcardsgame';
+function PatreonButton({ label = false }: { label?: boolean }) {
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel="Поддержать игру на Patreon"
+      onPress={() =>
+        Linking.openURL(PATREON_URL).catch(() =>
+          Alert.alert('Patreon', 'Не удалось открыть ссылку. Проверьте подключение к интернету.')
+        )
+      }
+      style={({ pressed }) => [label ? s.networkTile : s.patreonButton, pressed && s.pressed]}
+    >
+      <Image
+        source={require('./assets/patreon-logo.png')}
+        style={{ width: 24, height: 24 }}
+        resizeMode="contain"
+      />
+      {label && <Text style={[s.sectionTitle, { flex: 1 }]}>Поддержать игру · Patreon</Text>}
+    </Pressable>
+  );
+}
 const message = (error: unknown) =>
   error instanceof Error ? error.message : 'Не удалось выполнить действие';
 
@@ -143,12 +178,32 @@ function CardFace({
   onPress?: () => void;
 }) {
   const skin = useContext(SkinContext);
+  const reducedMotion = useContext(ReducedMotion);
+  const lift = useRef(new Animated.Value(0)).current;
+  const visibility = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
+  useEffect(() => {
+    const animation = Animated.parallel([
+      Animated.timing(lift, {
+        toValue: active ? -Math.min(5, ((size || 96) / 96) * 5) : 0,
+        duration: reducedMotion ? 0 : 180,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }),
+      Animated.timing(visibility, {
+        toValue: onPress && disabled ? 0.78 : 1,
+        duration: reducedMotion ? 0 : 200,
+        useNativeDriver: true
+      })
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [active, disabled, !!onPress, size, reducedMotion, lift, visibility]);
   const artwork = faces[skin][card.code] || faces['bicycle-classic'][card.code];
   const red = card.suit === 'H' || card.suit === 'D' || card.code === 'JOKER_RED';
   const suit = suits[card.suit] || '✦';
   const value = card.val === 'JOKER' ? 'JK' : card.val;
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={`${value} ${suit}${active ? ', можно сыграть' : ''}`}
       disabled={!onPress || disabled}
@@ -158,8 +213,8 @@ function CardFace({
         small && s.cardSmall,
         size ? { width: size, height: size * 1.44 } : undefined,
         active && s.cardActive,
-        active && size ? { transform: [{ translateY: -Math.min(5, (size / 96) * 5) }] } : undefined,
-        onPress && disabled && s.cardDim
+        onPress && disabled && s.cardDim,
+        { opacity: visibility, transform: [{ translateY: lift }] }
       ]}
     >
       {artwork ? (
@@ -177,18 +232,6 @@ function CardFace({
           }}
         >
           <Image source={artwork} style={{ width: '100%', height: '100%' }} resizeMode="stretch" />
-          {onPress && disabled && (
-            <View
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
-                backgroundColor: '#00000024'
-              }}
-            />
-          )}
         </View>
       ) : (
         <>
@@ -197,7 +240,7 @@ function CardFace({
           <Text style={[s.cardCorner, red && s.red]}>{suit}</Text>
         </>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -236,28 +279,43 @@ function Volume({
   );
 }
 function DurakApp() {
+  const reducedMotion = useContext(ReducedMotion);
+  const motionSignature = useRef('');
+  const reducedMotionRef = useRef(reducedMotion);
+  reducedMotionRef.current = reducedMotion;
   const [ready, setReady] = useState(false);
   const [name, setName] = useState('Игрок');
   const [draftName, setDraftName] = useState('Игрок');
-  const [address, setAddress] = useState('');
+  const address = DEFAULT_SERVER;
   const [haptics, setHaptics] = useState(true);
   const [audio, setAudio] = useState<AudioSettings>(defaultAudio);
   const [skin, setSkin] = useState<Skin>('bicycle-classic');
   const [handWidth, setHandWidth] = useState(300);
   const [bodySize, setBodySize] = useState({ width: 360, height: 600 });
   const [boardSize, setBoardSize] = useState({ width: 300, height: 180 });
-  const [tab, setTab] = useState<'home' | 'rooms' | 'profile'>('home');
+  const [tab, setTabState] = useState<'home' | 'rooms' | 'profile'>('home');
+  function setTab(value: typeof tab) {
+    animateLayout(reducedMotion);
+    setTabState(value);
+  }
   const [game, setGame] = useState<GameState | null>(null);
+  const [resultClosed, setResultClosed] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [connected, setConnected] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+  const [connectionIssue, setConnectionIssue] = useState('');
   const [user, setUser] = useState<User | null>(null);
+  const [history, setHistory] = useState<ReturnType<typeof matchRecord>[]>([]);
+  const [historyMessage, setHistoryMessage] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const historyWork = useRef(Promise.resolve());
+  const accountId = useRef<string | null>(null);
   const [notice, setNotice] = useState('');
   const [options, setOptions] = useState<Options>(defaults);
   const [dialog, setDialog] = useState<
     null | 'local' | 'network' | 'rules' | 'account' | 'settings' | 'bluetooth' | 'bluetooth-host'
   >(null);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [phonesOnly, setPhonesOnly] = useState(true);
   const [btStatus, setBtStatus] = useState(
     'Один игрок создаёт стол, остальные находят его телефон рядом. Интернет не нужен.'
   );
@@ -276,6 +334,48 @@ function DurakApp() {
   const pendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const alive = useRef(true);
 
+  function syncHistory(record: ReturnType<typeof matchRecord> = null) {
+    const owner = accountId.current;
+    const client = network.current;
+    if (!owner || !client) return;
+    historyWork.current = historyWork.current
+      .catch(() => {})
+      .then(async () => {
+        const key = `durak.native.pendingMatches.${owner}`;
+        let queue = readHistory(await AsyncStorage.getItem(key));
+        queue = addMatch(queue, record);
+        await AsyncStorage.setItem(key, JSON.stringify(queue));
+        try {
+          for (const entry of [...queue]) {
+            if (accountId.current !== owner) return;
+            await client.request('history', { userId: owner, record: entry });
+            queue = queue.filter((item) => item.id !== entry.id);
+            await AsyncStorage.setItem(key, JSON.stringify(queue));
+          }
+          const data = await client.request('history');
+          if (accountId.current === owner) {
+            setHistory(readHistory(JSON.stringify(data.history)));
+            setHistoryMessage('');
+          }
+        } catch {
+          if (accountId.current === owner)
+            setHistoryMessage(
+              'Нет связи. История загрузится при подключении; новые результаты ждут отправки.'
+            );
+        }
+      })
+      .catch(() => setHistoryMessage('Не удалось сохранить результат на телефоне.'));
+  }
+  useEffect(() => {
+    if (user && (connected || tab === 'profile' || tab === 'home')) syncHistory();
+  }, [user?.id, connected, tab]);
+  useEffect(() => {
+    if (user && game && (game.local || game.bluetooth)) {
+      const record = matchRecord(game);
+      if (record) syncHistory(record);
+    }
+  }, [game]);
+
   function notify(text: string) {
     setNotice(text);
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
@@ -291,7 +391,6 @@ function DurakApp() {
   useEffect(() => {
     AsyncStorage.multiGet([
       'durak.native.name',
-      'durak.native.server',
       'durak.native.haptics',
       'durak.native.audio',
       'durak.native.skin'
@@ -302,7 +401,6 @@ function DurakApp() {
         const stored = data['durak.native.name'] || 'Игрок';
         setName(stored);
         setDraftName(stored);
-        setAddress(data['durak.native.server'] || '');
         setHaptics(data['durak.native.haptics'] !== 'off');
         const savedSkin = data['durak.native.skin'];
         if (skins.includes(savedSkin as Skin)) setSkin(savedSkin as Skin);
@@ -374,7 +472,15 @@ function DurakApp() {
     if (patch.sounds === true || patch.soundVolume !== undefined) playSound('click');
   }
   function receive(state: GameState) {
+    const signature = JSON.stringify([
+      state.status,
+      state.myHand.map((card) => card.code),
+      state.table.map((pair) => [pair.attack.code, pair.defend?.code])
+    ]);
+    if (motionSignature.current !== signature) animateLayout(reducedMotionRef.current);
+    motionSignature.current = signature;
     playSound(state.lastAction);
+    if (state.status !== 'finished') setResultClosed(false);
     setGame(state);
     setPending(false);
     setTransfer(false);
@@ -392,10 +498,6 @@ function DurakApp() {
     setBusy(true);
     bluetooth.current?.dispose();
     session.current?.dispose();
-    network.current?.dispose();
-    network.current = null;
-    setConnected(false);
-    setUser(null);
     setDevices([]);
     try {
       const client = new BluetoothGame(name, {
@@ -429,33 +531,33 @@ function DurakApp() {
     }
   }
   function startLocal() {
-    network.current?.dispose();
-    network.current = null;
-    setConnected(false);
-    setUser(null);
     session.current?.dispose();
     session.current = createLocalGame({ ...options, name, onState: receive });
     setDialog(null);
   }
-  async function connect() {
-    if (connecting) return;
-    let url: string;
-    try {
-      url = serverAddress(address);
-    } catch (error) {
-      notify(message(error));
-      return;
-    }
-    network.current?.dispose();
+  useEffect(() => {
+    if (ready && !game && !dialog && !network.current) connect();
+  }, [ready, tab, !!game, dialog]);
+  function connect() {
+    if (network.current) return;
     setConnected(false);
     setRooms([]);
     setUser(null);
-    setConnecting(true);
-    const client = new NetworkGame(url, name, {
+    setConnectionIssue('');
+    const client = new NetworkGame(DEFAULT_SERVER, name, {
       state: receive,
       rooms: setRooms,
-      connection: setConnected,
+      connection: (value) => {
+        setConnected(value);
+        if (value) setConnectionIssue('');
+      },
+      connectionIssue: setConnectionIssue,
       profile: (account, nickname) => {
+        if (accountId.current !== (account?.id || null)) {
+          setHistory([]);
+          setHistoryMessage('');
+        }
+        accountId.current = account?.id || null;
         setUser(account);
         if (nickname) {
           setName(nickname);
@@ -472,17 +574,7 @@ function DurakApp() {
       }
     });
     network.current = client;
-    try {
-      await client.connect();
-      await save('server', url);
-      setAddress(url);
-    } catch (error) {
-      client.dispose();
-      if (network.current === client) network.current = null;
-      notify(message(error));
-    } finally {
-      setConnecting(false);
-    }
+    client.start();
   }
   function send(event: string, payload?: unknown) {
     if (pending || (!game?.local && !game?.bluetooth && !connected)) return;
@@ -493,13 +585,23 @@ function DurakApp() {
     }, 5000);
     if (game?.local || game?.bluetooth) session.current?.send(event, payload);
     else network.current?.send(event, payload);
-    if (haptics) Vibration.vibrate(12);
+    if (haptics) tapHaptic();
   }
   function leave() {
+    if (
+      game &&
+      !['waiting', 'finished'].includes(game.status) &&
+      !game.players.find((player) => player.isMe)?.surrendered
+    ) {
+      notify('Сначала нажмите «Сдаться», затем можно выйти.');
+      return;
+    }
     Alert.alert(
       'Выйти из партии?',
       game?.local
-        ? 'Эта партия с ботами не сохранится.'
+        ? user
+          ? 'После выхода результат будет доступен в статистике аккаунта при подключении к серверу.'
+          : 'Войдите в аккаунт перед следующей игрой, чтобы сохранять статистику.'
         : 'Выход закроет комнату для остальных игроков.',
       [
         { text: 'Остаться', style: 'cancel' },
@@ -561,6 +663,21 @@ function DurakApp() {
     }
   }
   const canAct = !!game && !pending && (game.local || game.bluetooth || connected);
+  const resultVisible = game?.status === 'finished' && !resultClosed;
+  const canLeave =
+    !game ||
+    ['waiting', 'finished'].includes(game.status) ||
+    !!game.players.find((player) => player.isMe)?.surrendered;
+  const surrendered = game?.players.find((player) => player.isMe)?.surrendered;
+  const lost = game?.loserIndex === game?.myIndex;
+  const resultTitle = surrendered
+    ? 'Вы сдались'
+    : game?.loserIndex == null
+      ? 'Ничья'
+      : lost
+        ? 'Поражение'
+        : 'Победа!';
+  const resultEmoji = surrendered ? '🏳️' : game?.loserIndex == null ? '🤝' : lost ? '💀' : '🏆';
   const deadline = game?.timeout.active ? game.timeout.deadline : game?.turnDeadline;
   const seconds = deadline ? Math.max(0, Math.ceil((deadline - now) / 1000)) : null;
 
@@ -570,6 +687,75 @@ function DurakApp() {
     : Math.max(48, Math.min(176, bodySize.height * 0.26));
   const layout = handLayout(game?.myHand.length || 0, handWidth, handBudget);
   const board = tableLayout(game?.table.length || 0, boardSize.width, boardSize.height);
+  function renderHistory() {
+    return (
+      <View style={s.panel}>
+        <Text style={s.sectionTitle}>Статистика матчей</Text>
+        {!user ? (
+          <>
+            <Text style={s.muted}>Войдите в аккаунт, чтобы смотреть статистику матчей.</Text>
+            <Button
+              title="ВОЙДИТЕ"
+              onPress={() => {
+                setHistoryOpen(false);
+                connect();
+                setRegister(false);
+                setDialog('account');
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <Text style={s.muted}>{historySummary(history)}</Text>
+            <Text style={s.caption}>Последние 500 матчей аккаунта, включая игры с ботами.</Text>
+            {!!historyMessage && <Text style={s.muted}>{historyMessage}</Text>}
+            {!history.length && !historyMessage && (
+              <Text style={s.muted}>Здесь появятся результаты новых матчей.</Text>
+            )}
+            {history.map(
+              (entry) =>
+                entry && (
+                  <View
+                    key={entry.id}
+                    style={[
+                      s.panel,
+                      entry.result === 'win'
+                        ? s.historyWin
+                        : entry.result === 'loss'
+                          ? s.historyLoss
+                          : s.historyDraw
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        s.sectionTitle,
+                        {
+                          color:
+                            entry.result === 'win'
+                              ? '#9AE6B4'
+                              : entry.result === 'loss'
+                                ? '#FFAAAA'
+                                : colors.cream
+                        }
+                      ]}
+                    >
+                      {resultLabels[entry.result as keyof typeof resultLabels]}
+                      {entry.surrendered ? ' · Вы сдались' : ''}
+                    </Text>
+                    <Text style={s.caption}>
+                      {new Date(entry.date).toLocaleString('ru-RU')} · {entry.mode}
+                    </Text>
+                    <Text style={s.muted}>Соперники: {entry.opponents}</Text>
+                    <Text style={s.caption}>{entry.rules}</Text>
+                  </View>
+                )
+            )}
+          </>
+        )}
+      </View>
+    );
+  }
+
   return (
     <SkinContext.Provider value={skin}>
       <SafeAreaView style={s.root} edges={['top', 'bottom', 'left', 'right']}>
@@ -582,9 +768,16 @@ function DurakApp() {
         ) : game ? (
           <>
             <View style={s.gameHeader}>
-              <Pressable accessibilityRole="button" onPress={leave} style={s.iconButton}>
-                <Text style={s.navIcon}>‹</Text>
-              </Pressable>
+              {canLeave && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Выйти из комнаты"
+                  onPress={leave}
+                  style={s.iconButton}
+                >
+                  <Text style={s.navIcon}>‹</Text>
+                </Pressable>
+              )}
               <View style={s.flex}>
                 <Text style={s.eyebrow}>
                   {game.bluetooth
@@ -888,7 +1081,7 @@ function DurakApp() {
                     title={
                       game.timeout.active
                         ? 'Продолжить ' + game.timeout.votes + '/' + game.timeout.required
-                        : 'Тайм-аут'
+                        : `Тайм-аут ${game.timeout.votes}/${game.timeout.required}`
                     }
                     disabled={!canAct || !game.timeout.canVote || game.timeout.voted}
                     onPress={() => send(game.timeout.active ? 'voteResume' : 'voteTimeout')}
@@ -921,17 +1114,22 @@ function DurakApp() {
                 </Text>
                 <Text style={s.caption}>Карточный клуб в кармане</Text>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Настройки"
-                onLongPress={() => setTab('profile')}
-                onPress={() => setDialog('settings')}
-                style={s.profileCircle}
-              >
-                <Text style={s.avatarText}>⚙</Text>
-              </Pressable>
+              <View style={s.row}>
+                <PatreonButton />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Настройки"
+                  onLongPress={() => setTab('profile')}
+                  onPress={() => setDialog('settings')}
+                  style={s.profileCircle}
+                >
+                  <Text style={s.avatarText}>⚙</Text>
+                </Pressable>
+              </View>
             </View>
             <ScrollView
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
               style={s.flex}
               contentContainerStyle={s.page}
               keyboardShouldPersistTaps="handled"
@@ -977,7 +1175,7 @@ function DurakApp() {
                   >
                     <View style={s.flex}>
                       <Text style={s.sectionTitle}>За одним столом</Text>
-                      <Text style={s.muted}>Комнаты с друзьями по Wi-Fi</Text>
+                      <Text style={s.muted}>Комнаты с друзьями через интернет</Text>
                     </View>
                     <Text style={s.navIcon}>→</Text>
                   </Pressable>
@@ -987,11 +1185,22 @@ function DurakApp() {
                     style={s.networkTile}
                   >
                     <View style={s.flex}>
-                      <Text style={s.sectionTitle}>ᛒ По Bluetooth</Text>
+                      <View style={s.row}>
+                        <BluetoothIcon />
+                        <Text style={s.sectionTitle}>По Bluetooth</Text>
+                      </View>
                       <Text style={s.muted}>С друзьями рядом · без интернета</Text>
                     </View>
                     <Text style={s.navIcon}>→</Text>
                   </Pressable>
+                  <Button
+                    secondary
+                    title="Статистика"
+                    onPress={() => {
+                      setHistoryOpen(true);
+                      if (user) syncHistory();
+                    }}
+                  />
                   <View style={s.infoRow}>
                     <View style={s.infoItem}>
                       <Text style={s.infoNumber}>2–4</Text>
@@ -1018,7 +1227,7 @@ function DurakApp() {
                   <Text style={s.eyebrow}>ИГРА С ДРУЗЬЯМИ</Text>
                   <Text style={s.title}>Общий стол</Text>
                   <Text style={s.muted}>
-                    Подключитесь к игровому серверу в вашей Wi-Fi-сети. Сайт открывать не нужно.
+                    Играйте с друзьями через интернет. Подключение происходит автоматически.
                   </Text>
                   <View style={s.panel}>
                     <View style={s.row}>
@@ -1027,23 +1236,10 @@ function DurakApp() {
                         {connected ? 'Сервер подключён' : 'Подключение к серверу'}
                       </Text>
                     </View>
-                    <Field
-                      label="Адрес сервера"
-                      value={address}
-                      onChangeText={setAddress}
-                      placeholder="http://192.168.1.10:3000"
-                      email
-                    />
-                    <Button
-                      title={
-                        connecting ? 'Подключаемся…' : connected ? 'Переподключить' : 'Подключиться'
-                      }
-                      disabled={connecting}
-                      onPress={connect}
-                    />
                     <Text style={s.caption}>
-                      Для Wi-Fi нужен сервер на компьютере. Чтобы играть без компьютера, выберите
-                      «По Bluetooth» на главном экране.
+                      {connected
+                        ? 'Создайте комнату или присоединитесь к друзьям.'
+                        : connectionIssue || 'Подключаемся к игре…'}
                     </Text>
                   </View>
                   {connected && (
@@ -1131,6 +1327,14 @@ function DurakApp() {
                       Ник хранится на телефоне. При подключении также обновляется на сервере.
                     </Text>
                   </View>
+                  <Button
+                    secondary
+                    title="Статистика"
+                    onPress={() => {
+                      setHistoryOpen(true);
+                      if (user) syncHistory();
+                    }}
+                  />
                   <View style={s.networkTile}>
                     <View style={s.flex}>
                       <Text style={s.sectionTitle}>Тактильный отклик</Text>
@@ -1141,6 +1345,7 @@ function DurakApp() {
                       value={haptics}
                       onValueChange={(value) => {
                         setHaptics(value);
+                        if (value) tapHaptic();
                         save('haptics', value ? 'on' : 'off');
                       }}
                       trackColor={{ false: colors.line, true: colors.accent }}
@@ -1181,7 +1386,7 @@ function DurakApp() {
                     )}
                   </View>
                   <Text style={s.footer}>
-                    ДУРАК / 2.5{'\n'}Интерфейс и локальная игра находятся в приложении.
+                    ДУРАК / 3.231{'\n'}Интерфейс и локальная игра находятся в приложении.
                   </Text>
                 </>
               )}
@@ -1214,9 +1419,126 @@ function DurakApp() {
           </Pressable>
         )}
         <Modal
-          visible={!!dialog}
+          visible={historyOpen}
           transparent
-          animationType="slide"
+          animationType={reducedMotion ? 'none' : 'fade'}
+          onRequestClose={() => setHistoryOpen(false)}
+        >
+          <SafeAreaView style={s.timeoutShade}>
+            <View style={s.historyModalWrap}>
+              <View style={s.historyModal} accessibilityViewIsModal>
+                <Button
+                  secondary
+                  title="Закрыть статистику"
+                  onPress={() => setHistoryOpen(false)}
+                />
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingTop: 12 }}
+                >
+                  {renderHistory()}
+                </ScrollView>
+              </View>
+            </View>
+          </SafeAreaView>
+        </Modal>
+        <Modal
+          visible={resultVisible}
+          transparent
+          animationType={reducedMotion ? 'none' : 'fade'}
+          onRequestClose={() => setResultClosed(true)}
+        >
+          <SafeAreaView style={s.timeoutShade}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={s.timeoutScroll}
+            >
+              <View
+                style={[s.resultDialog, lost && !surrendered && s.resultDialogLost]}
+                accessibilityViewIsModal
+              >
+                <Text style={s.resultEmoji}>{resultEmoji}</Text>
+                <Text
+                  style={[s.resultHeading, lost && !surrendered && s.resultHeadingLost]}
+                  accessibilityRole="header"
+                >
+                  {resultTitle}
+                </Text>
+                <Text style={s.resultDescription}>{game?.resultText}</Text>
+                <View style={s.resultButtons}>
+                  {game?.canRestart && (
+                    <Button
+                      title="🔄 Новая игра"
+                      disabled={!canAct}
+                      onPress={() => send('restartGame')}
+                    />
+                  )}
+                  <Button title="Выйти" secondary onPress={leave} />
+                  <Button title="Закрыть" secondary onPress={() => setResultClosed(true)} />
+                </View>
+                {!!notice && (
+                  <Text style={s.timeoutHelp} accessibilityRole="alert">
+                    {notice}
+                  </Text>
+                )}
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+        <Modal
+          visible={!!game?.timeout.active}
+          transparent
+          animationType={reducedMotion ? 'none' : 'fade'}
+          onRequestClose={() => {}}
+        >
+          <SafeAreaView style={s.timeoutShade}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={s.timeoutScroll}
+            >
+              <View style={s.timeoutPanel} accessibilityViewIsModal>
+                <Text style={s.timeoutTitle} accessibilityRole="header">
+                  Тайм-аут
+                </Text>
+                <Text style={s.timeoutCountdown}>
+                  {seconds === null
+                    ? '—'
+                    : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`}
+                </Text>
+                <Text style={s.timeoutDescription}>
+                  Игра приостановлена на одну минуту. Таймер хода сохранён.
+                </Text>
+                <Text style={s.timeoutDescription} accessibilityLiveRegion="polite">
+                  За отмену тайм-аута: {game?.timeout.votes ?? 0} из {game?.timeout.required ?? 0}{' '}
+                  необходимых голосов
+                </Text>
+                <Button
+                  title={game?.timeout.voted ? 'Ваш голос учтён' : 'Голосовать за продолжение'}
+                  disabled={!canAct || !game?.timeout.canVote || game.timeout.voted}
+                  onPress={() => send('voteResume')}
+                />
+                <Text style={s.timeoutHelp}>
+                  Голосование за отмену открыто весь тайм-аут. Нужно большинство голосов игроков.
+                </Text>
+                {!canAct && !pending && (
+                  <Text style={s.timeoutHelp}>Нет связи. Ожидаем подключения…</Text>
+                )}
+                {!!notice && (
+                  <Text style={s.timeoutHelp} accessibilityRole="alert">
+                    {notice}
+                  </Text>
+                )}
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+        <Modal
+          visible={!!dialog && !game?.timeout.active && !resultVisible}
+          transparent
+          animationType={reducedMotion ? 'none' : 'slide'}
           onRequestClose={() => {
             closeDialog();
           }}
@@ -1249,7 +1571,12 @@ function DurakApp() {
                     <Text style={s.navIcon}>×</Text>
                   </Pressable>
                 </View>
-                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.sheetBody}>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={s.sheetBody}
+                >
                   {(dialog === 'local' || dialog === 'network' || dialog === 'bluetooth-host') && (
                     <>
                       <Text style={s.muted}>
@@ -1358,25 +1685,47 @@ function DurakApp() {
                         onPress={() => startBluetooth(false)}
                       />
                       <Text style={s.caption}>
-                        Телефоны должны быть рядом. Здесь появляются только комнаты нашей игры. На
-                        Android 11 и ниже включите геолокацию для поиска.
+                        Сначала друг должен создать стол. Список показывает устройства, а не только
+                        открытые комнаты. На Android 11 и ниже включите геолокацию для поиска.
                       </Text>
-                      {devices.map((device) => (
-                        <Button
-                          key={device.id}
-                          secondary
-                          disabled={busy}
-                          title={device.name + ' · ' + device.id.slice(-5)}
-                          onPress={async () => {
-                            setBusy(true);
-                            try {
-                              await bluetooth.current?.join(device.id);
-                            } finally {
-                              setBusy(false);
-                            }
-                          }}
+                      <View style={s.rowBetween}>
+                        <Text style={s.sectionTitle}>Только телефоны</Text>
+                        <Switch
+                          accessibilityLabel="Только телефоны"
+                          value={phonesOnly}
+                          onValueChange={setPhonesOnly}
+                          trackColor={{ true: colors.accent, false: colors.panel }}
                         />
-                      ))}
+                      </View>
+                      {phonesOnly && (
+                        <Text style={s.caption}>
+                          Нет телефона друга? Выключите фильтр: некоторые телефоны не сообщают свой
+                          тип.
+                        </Text>
+                      )}
+                      {devices
+                        .filter((device) => !phonesOnly || device.isPhone)
+                        .map((device) => (
+                          <Button
+                            key={device.id}
+                            secondary
+                            disabled={busy}
+                            title={
+                              device.name.slice(0, 40) +
+                              (device.name.length > 40 ? '…' : '') +
+                              ' · ' +
+                              device.id.slice(-5)
+                            }
+                            onPress={async () => {
+                              setBusy(true);
+                              try {
+                                await bluetooth.current?.join(device.id);
+                              } finally {
+                                setBusy(false);
+                              }
+                            }}
+                          />
+                        ))}
                     </>
                   )}
                   {dialog === 'settings' && (
@@ -1420,6 +1769,7 @@ function DurakApp() {
                           value={haptics}
                           onValueChange={(value) => {
                             setHaptics(value);
+                            if (value) tapHaptic();
                             save('haptics', value ? 'on' : 'off');
                           }}
                           trackColor={{ false: colors.line, true: colors.accent }}
@@ -1460,6 +1810,7 @@ function DurakApp() {
                         Настройки сохраняются на этом телефоне. Музыка приостанавливается, когда
                         игра свёрнута.
                       </Text>
+                      <PatreonButton label />
                       <Button title="Готово" onPress={closeDialog} />
                     </>
                   )}
@@ -1543,7 +1894,9 @@ function DurakApp() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <DurakApp />
+      <MotionProvider>
+        <DurakApp />
+      </MotionProvider>
     </SafeAreaProvider>
   );
 }

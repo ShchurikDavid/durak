@@ -85,6 +85,8 @@ function publicStateFor(room, index, lastAction) {
     surrendered: Boolean(me.surrendered),
     canSurrender: canSurrender(room, index),
     roomCode: room.code,
+    matchId: room.game.matchId,
+    finishedAt: room.game.finishedAt,
     playersConnected: connectedCount,
     playersTotal: room.players.length,
     maxPlayers: room.maxPlayers,
@@ -102,6 +104,7 @@ function publicStateFor(room, index, lastAction) {
           }),
     players: room.players.map((player, playerIndex) => ({
       index: playerIndex,
+      isBot: Boolean(player.isBot),
       name: player.name || `Игрок ${playerIndex + 1}`,
       connected: Boolean(player.socketId),
       surrendered: Boolean(player.surrendered),

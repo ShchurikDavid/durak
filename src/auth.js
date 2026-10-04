@@ -7,6 +7,7 @@ const derive = promisify(scrypt);
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 const lifetime = 30 * 24 * 60 * 60 * 1000;
 const { installGoogleAuth } = require('./google-auth');
+const { matchRecord } = require('./game/match-history');
 
 function createAuth({
   databasePath = process.env.DATABASE_PATH || path.join(__dirname, '../data/durak.sqlite'),
@@ -35,6 +36,24 @@ function createAuth({
     db.exec('ALTER TABLE sessions ADD COLUMN guest_name TEXT');
   }
   db.exec('PRAGMA user_version=2');
+  db.exec(`CREATE TABLE IF NOT EXISTS match_history (
+    user_id TEXT NOT NULL REFERENCES users(id), match_id TEXT NOT NULL,
+    played_at INTEGER NOT NULL, record TEXT NOT NULL,
+    PRIMARY KEY (user_id, match_id)
+  )`);
+  function saveMatch(userId, record) {
+    if (!record) return;
+    db.prepare('INSERT OR IGNORE INTO match_history VALUES (?, ?, ?, ?)').run(
+      userId,
+      record.id,
+      record.date,
+      JSON.stringify(record)
+    );
+  }
+  function recordState(playerId, state) {
+    if (!playerId?.startsWith('account:')) return;
+    saveMatch(playerId.slice(8), matchRecord(state));
+  }
   function token(req) {
     return (
       req.headers.cookie
@@ -87,6 +106,50 @@ function createAuth({
       const s = lookup(req);
       if (!s) issue(req, res);
       res.json({ user: publicUser(s), name: s?.name || null });
+    });
+    app.get('/api/auth/history', (req, res) => {
+      const identity = lookup(req);
+      if (!identity?.user_id)
+        return res.status(401).json({ error: 'ВОЙДИТЕ, чтобы смотреть статистику.' });
+      const history = db
+        .prepare(
+          'SELECT record FROM match_history WHERE user_id=? ORDER BY played_at DESC LIMIT 500'
+        )
+        .all(identity.user_id)
+        .map((row) => JSON.parse(row.record));
+      res.json({ history });
+    });
+    app.post('/api/auth/history', (req, res) => {
+      const identity = lookup(req);
+      if (!identity?.user_id)
+        return res.status(401).json({ error: 'ВОЙДИТЕ, чтобы сохранять статистику.' });
+      const r = req.body?.record;
+      if (
+        !r ||
+        req.body.userId !== identity.user_id ||
+        typeof r.id !== 'string' ||
+        r.id.length > 150 ||
+        !Number.isSafeInteger(r.date) ||
+        r.date <= 0 ||
+        r.date > Date.now() + 60000 ||
+        !['win', 'loss', 'draw'].includes(r.result) ||
+        !['С ботами', 'Bluetooth'].includes(r.mode) ||
+        typeof r.opponents !== 'string' ||
+        r.opponents.length > 200 ||
+        typeof r.rules !== 'string' ||
+        r.rules.length > 100
+      )
+        return res.status(400).json({ error: 'Некорректный результат матча.' });
+      saveMatch(identity.user_id, {
+        id: r.id,
+        date: r.date,
+        result: r.result,
+        mode: r.mode,
+        opponents: r.opponents,
+        rules: r.rules,
+        surrendered: Boolean(r.surrendered)
+      });
+      res.json({ ok: true });
     });
     app.post('/api/auth/name', (req, res) => {
       const identity = lookup(req);
@@ -202,6 +265,6 @@ function createAuth({
       });
     });
   }
-  return { install, lookup, close: () => db.close() };
+  return { install, lookup, recordState, close: () => db.close() };
 }
 module.exports = { createAuth };

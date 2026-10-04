@@ -1,9 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 import type { GameState, Room, User, Options } from './types';
 
+export const DEFAULT_SERVER = 'https://game.durakcards.uk';
+
 export function serverAddress(value: string) {
   const text = value.trim();
-  const url = new URL(text.includes('://') ? text : `http://${text}`);
+  const url = new URL(
+    text === 'game.durakcards.uk' ? DEFAULT_SERVER : text.includes('://') ? text : `http://${text}`
+  );
   const local =
     /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(
       url.hostname
@@ -30,6 +34,7 @@ type Listeners = {
   profile(user: User | null, name?: string): void;
   error(message: string): void;
   closed(): void;
+  connectionIssue?(message: string): void;
 };
 export class NetworkGame {
   private socket?: Socket;
@@ -37,11 +42,31 @@ export class NetworkGame {
   private disposed = false;
   private room = '';
   private requests = new Set<AbortController>();
+  private retryTimer?: ReturnType<typeof setTimeout>;
+  private starting = false;
   constructor(
     readonly address: string,
     private name: string,
-    private listeners: Listeners
+    private listeners: Listeners,
+    private retryDelay = 5000
   ) {}
+  start() {
+    if (this.disposed || this.starting || this.socket || this.retryTimer) return;
+    this.starting = true;
+    this.connect()
+      .catch(() => {
+        if (this.disposed) return;
+        this.listeners.connection(false);
+        this.listeners.connectionIssue?.('Нет связи с сервером. Пробуем подключиться снова…');
+        this.retryTimer = setTimeout(() => {
+          this.retryTimer = undefined;
+          this.start();
+        }, this.retryDelay);
+      })
+      .finally(() => {
+        this.starting = false;
+      });
+  }
   async request(action: string, body?: object): Promise<any> {
     const abort = new AbortController();
     this.requests.add(abort);
@@ -67,7 +92,7 @@ export class NetworkGame {
       return data;
     } catch (error) {
       if (abort.signal.aborted)
-        throw new Error('Сервер не ответил. Проверьте Wi-Fi и адрес компьютера.');
+        throw new Error('Сервер не ответил. Проверьте подключение к интернету.');
       throw error;
     } finally {
       clearTimeout(timer);
@@ -100,7 +125,9 @@ export class NetworkGame {
     socket.on('disconnect', () => this.listeners.connection(false));
     socket.on('connect_error', () => {
       this.listeners.connection(false);
-      this.listeners.error('Нет связи с сервером. Проверьте адрес и общую Wi-Fi-сеть.');
+      (this.listeners.connectionIssue || this.listeners.error)(
+        'Нет связи с сервером. Пробуем подключиться снова…'
+      );
     });
     socket.on('roomList', this.listeners.rooms);
     socket.on('roomLobby', (data) => this.listeners.rooms(data.rooms || []));
@@ -126,6 +153,7 @@ export class NetworkGame {
       this.listeners.profile(data.user, data.name);
     });
     socket.on('authExpired', () => {
+      this.listeners.profile(null);
       this.room = '';
       this.listeners.closed();
       this.listeners.error('Вход завершился. Подключитесь к серверу заново.');
@@ -160,6 +188,7 @@ export class NetworkGame {
   }
   dispose() {
     this.disposed = true;
+    clearTimeout(this.retryTimer);
     this.requests.forEach((r) => r.abort());
     this.socket?.removeAllListeners();
     this.socket?.disconnect();

@@ -57,6 +57,17 @@ function registerSocketHandlers(io, service) {
     });
 
     socket.on('leaveRoom', () => {
+      const room = rooms.get(socket.data.roomCode);
+      const player = room?.players[playerIndexBySocket(room, socket.id)];
+      if (
+        room &&
+        player &&
+        !['waiting', 'finished'].includes(room.game.status) &&
+        !player.surrendered
+      ) {
+        socket.emit('roomError', 'Сначала нажмите «Сдаться», затем можно выйти.');
+        return sendGameState(room);
+      }
       leaveCurrentRoom(socket, 'leave');
       sendLobby(socket, 'Вы вышли из комнаты.');
     });

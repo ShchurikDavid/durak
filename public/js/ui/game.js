@@ -7,8 +7,14 @@ import { cardBack, makeCardImg } from '../cards.js';
 import { renderTimers } from './timers.js';
 import { showResultModal, hideResultModal } from './result.js';
 import { renderTableUI } from './table.js';
+import { captureCards, animateCards } from './motion.js';
 function render(state) {
+  const positions = captureCards();
   renderTimeout(state);
+  const canLeave = ['waiting', 'finished'].includes(state.status) || state.surrendered;
+  for (const id of ['leave', 'mobileLeave']) {
+    if ($(id)) $(id).classList.toggle('hidden', !canLeave);
+  }
   $('status').textContent = state.statusText || 'Ожидание...';
   $('deckCount').textContent = state.deckCount;
   $('roomBadge').textContent =
@@ -24,6 +30,7 @@ function render(state) {
   renderHand(state);
   renderTimers(state);
   renderTableUI(state);
+  animateCards(positions);
   $('surrender').classList.toggle('hidden', !state.canSurrender);
   $('surrender').disabled = !state.canSurrender || session.actionPending;
   $('bito').disabled = !state.canPass || session.actionPending;
@@ -43,7 +50,6 @@ function fanOverlap(el, count) {
 }
 function renderOpponent(state) {
   const el = $('opponent');
-  el.innerHTML = '';
   // Сервер присылает общий массив players с cardCount на каждого,
   // а не отдельное поле opponentCardCount — раньше карты соперника
   // из-за этого никогда не отображались в игре на двоих.
@@ -51,6 +57,10 @@ function renderOpponent(state) {
   const opponent = players.find((p) => !p.isMe);
   const count = Number(opponent?.cardCount || 0);
   el.style.setProperty('--back-overlap', fanOverlap(el, count));
+  const signature = `${count}:${cardBack()}`;
+  if (el.dataset.signature === signature) return;
+  el.dataset.signature = signature;
+  el.replaceChildren();
   for (let i = 0; i < count; i++) {
     const back = document.createElement('div');
     back.className = 'back';
@@ -60,16 +70,26 @@ function renderOpponent(state) {
 }
 function renderTrump(state) {
   const el = $('trump');
+  const signature = `${state.trumpCard?.code}:${cardBack()}`;
+  if (el.dataset.signature === signature) return;
+  el.dataset.signature = signature;
   el.innerHTML = '';
   if (!state.trumpCard) return;
   el.appendChild(makeCardImg(state.trumpCard.code, 'Козырь'));
 }
 function renderTable(state) {
   const el = $('table');
-  el.innerHTML = '';
+  const existing = new Map([...el.children].map((pair) => [pair.dataset.code, pair]));
+  const keep = new Set(state.table.map((pair) => pair.attack.code));
+  for (const [code, pair] of existing) if (!keep.has(code)) pair.remove();
   state.table.forEach((pair) => {
+    const signature = `${pair.attack.code}:${pair.defend?.code}:${cardBack()}`;
+    const previous = existing.get(pair.attack.code);
+    if (previous?.dataset.signature === signature) return;
     const pairEl = document.createElement('div');
     pairEl.className = 'pair';
+    pairEl.dataset.code = pair.attack.code;
+    pairEl.dataset.signature = signature;
     pairEl.appendChild(
       makeCardImg(pair.attack.code, `${pair.attack.val}${pair.attack.suit}`, 'card attack')
     );
@@ -77,13 +97,23 @@ function renderTable(state) {
       pairEl.appendChild(
         makeCardImg(pair.defend.code, `${pair.defend.val}${pair.defend.suit}`, 'card defend')
       );
-    el.appendChild(pairEl);
+    if (previous) previous.replaceWith(pairEl);
+    else el.appendChild(pairEl);
   });
 }
 function renderHand(state) {
   const el = $('hand');
-  el.innerHTML = '';
+  const existing = new Map(
+    [...el.querySelectorAll('img.card')].map((img) => [img.dataset.code, img])
+  );
   const cards = state.myHand || [];
+  const keep = new Set(cards.map((card) => card.code));
+  for (const [code, img] of existing) {
+    if (!keep.has(code) || img.dataset.skin !== cardBack()) {
+      (img.closest('.durak-card-filter') || img).remove();
+      existing.delete(code);
+    }
+  }
   // Карты крупные, поэтому вместо переноса на вторую строку они
   // накладываются друг на друга ровно настолько, чтобы влезть в один ряд.
   const overlap = handOverlap(el, cards.length);
@@ -95,16 +125,18 @@ function renderHand(state) {
       (el.clientWidth || window.innerWidth) - 12;
   el.classList.toggle('scroll', !fits);
   cards.forEach((card, index) => {
-    const img = makeCardImg(card.code, `${card.val}${card.suit}`);
-    img.style.zIndex = String(index + 1);
+    const img = existing.get(card.code) || makeCardImg(card.code, `${card.val}${card.suit}`);
+    img.dataset.skin = cardBack();
+    const item = img.closest('.durak-card-filter') || img;
+    item.style.zIndex = String(index + 1);
     // Отступ считаем прямо в JS и пишем инлайн-стилем на каждую карту.
     // Раньше отрицательный margin вешался через CSS-селектор
     // "#hand .card:first-child" — он ломался, когда карту оборачивал
     // фильтр «можно/нельзя ходить» (первой становилась уже обёртка,
     // а не сама карта), из-за чего перекрытие переставало работать
     // и веер карт вылезал за пределы экрана на телефоне.
-    img.style.marginLeft = index === 0 ? '0px' : `calc(var(--card-w) * ${overlap} * -1)`;
-    img.addEventListener('click', () => {
+    item.style.marginLeft = index === 0 ? '0px' : `calc(var(--card-w) * ${overlap} * -1)`;
+    img.onclick = () => {
       if (
         socket.connected &&
         session.currentState?.status === 'playing' &&
@@ -114,8 +146,8 @@ function renderHand(state) {
         session.actionPending = true;
         socket.emit(session.transferMode ? 'transferCard' : 'playCard', index);
       }
-    });
-    el.appendChild(img);
+    };
+    if (el.children[index] !== item) el.insertBefore(item, el.children[index] || null);
   });
   highlightPlayableCards(state);
 }
@@ -160,6 +192,8 @@ export function initGameControls(enterLobby) {
     socket.emit('restartGame');
   };
   $('leave').onclick = () => {
+    const state = session.currentState;
+    if (state && !['waiting', 'finished'].includes(state.status) && !state.surrendered) return;
     if (confirm('Выйти из комнаты?')) {
       socket.emit('leaveRoom');
       enterLobby();

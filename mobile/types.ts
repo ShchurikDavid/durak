@@ -1,5 +1,6 @@
 export type Card = { val: string; suit: string; code: string; joker?: boolean };
 export type Player = {
+  isBot?: boolean;
   index: number;
   name: string;
   connected: boolean;
@@ -10,6 +11,8 @@ export type Player = {
   surrendered: boolean;
 };
 export type GameState = {
+  matchId?: string;
+  finishedAt?: number | null;
   lastAction?: string;
   local?: boolean;
   bluetooth?: boolean;

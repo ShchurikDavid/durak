@@ -1,11 +1,10 @@
 /* Keep feedback in colors, without moving controls under the pointer. */
 html {
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
 }
-@supports not (scrollbar-gutter: stable) {
-  html {
-    overflow-y: scroll;
-  }
+html::-webkit-scrollbar {
+  display: none;
 }
 body .btn,
 body .setting-toggle,

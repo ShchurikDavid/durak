@@ -22,6 +22,7 @@ const { NetworkGame, serverAddress } = compiled.exports;
 test('native connection accepts LAN HTTP and HTTPS but rejects insecure external hosts', () => {
   assert.equal(serverAddress('192.168.1.10:3000'), 'http://192.168.1.10:3000');
   assert.equal(serverAddress('https://game.example/'), 'https://game.example');
+  assert.equal(serverAddress('game.durakcards.uk'), 'https://game.durakcards.uk');
   for (const value of [
     'http://example.com',
     'javascript:alert(1)',
@@ -91,9 +92,23 @@ test('two native clients authenticate, play in the same room and receive nicknam
   state = second.next('state');
   await first.client.rename('Новый ник');
   assert.equal((await state).players[0].name, 'Новый ник');
-  const closed = second.next('closed');
+  const otherRejected = second.next('state');
+  const rejected = first.next('state');
   first.client.send('leaveRoom');
-  await closed;
+  assert.equal((await rejected).status, 'playing');
+  await otherRejected;
+  const otherFinished = second.next('state');
+  const surrendered = first.next('state');
+  first.client.send('surrender');
+  const finished = await surrendered;
+  await otherFinished;
+  assert.equal(finished.status, 'finished');
+  assert.equal(finished.surrendered, true);
+  const left = second.next('state');
+  first.client.send('leaveRoom');
+  assert.equal((await left).players[0].connected, false);
+  assert.ok(first.errors.some((message) => message.includes('Сначала')));
+  first.errors.length = 0;
   ready = first.next('connected');
   const profile = first.next('profile');
   await first.client.account('register', {
@@ -104,4 +119,72 @@ test('two native clients authenticate, play in the same room and receive nicknam
   assert.equal((await profile).user.name, 'Аккаунт');
   await ready;
   assert.deepEqual(first.errors, []);
+});
+
+test('automatic connection retries initial failure and ignores duplicate starts', async (t) => {
+  const app = createApplication({ databasePath: ':memory:' });
+  t.after(() => app.close());
+  app.server.listen(0, '127.0.0.1');
+  await once(app.server, 'listening');
+  const url = `http://127.0.0.1:${app.server.address().port}`;
+  const originalFetch = globalThis.fetch;
+  let attempts = 0;
+  t.mock.method(globalThis, 'fetch', (input, options) => {
+    if (String(input) === url + '/api/auth/me' && ++attempts === 1)
+      return Promise.reject(new Error('Temporary connection failure'));
+    return originalFetch(input, options);
+  });
+  const events = new EventEmitter();
+  const client = new NetworkGame(
+    url,
+    'Игрок',
+    {
+      state() {},
+      rooms() {},
+      profile() {},
+      closed() {},
+      error() {},
+      connectionIssue() {},
+      connection: (ready) => {
+        if (ready) events.emit('ready');
+      }
+    },
+    20
+  );
+  t.after(() => client.dispose());
+  const connected = once(events, 'ready', { signal: AbortSignal.timeout(10000) });
+  client.start();
+  client.start();
+  await connected;
+  assert.equal(attempts, 2);
+  client.start();
+  assert.equal(attempts, 2);
+});
+
+test('leaving automatic connection cancels scheduled retries', async (t) => {
+  let attempts = 0;
+  t.mock.method(globalThis, 'fetch', () => {
+    attempts++;
+    return Promise.reject(new Error('Offline'));
+  });
+  const client = new NetworkGame(
+    'https://game.durakcards.uk',
+    'Игрок',
+    {
+      state() {},
+      rooms() {},
+      profile() {},
+      closed() {},
+      error() {},
+      connection() {},
+      connectionIssue() {}
+    },
+    30
+  );
+  t.after(() => client.dispose());
+  client.start();
+  await new Promise((resolve) => setImmediate(resolve));
+  client.dispose();
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.equal(attempts, 1);
 });

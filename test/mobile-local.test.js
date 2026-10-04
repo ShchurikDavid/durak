@@ -46,6 +46,26 @@ test('native offline games use legal moves, conserve cards and finish without a 
               state.discardCount +
               state.table.reduce((total, pair) => total + 1 + !!pair.defend, 0);
             assert.equal(count, Number(mode));
+            if (
+              state.canPass &&
+              (state.myHand.length > 0 || state.deckCount > 0) &&
+              !state.surrendered
+            ) {
+              const round = state.roundNumber;
+              const discard = state.discardCount;
+              assert.equal(state.turnDeadline, null, 'Manual bito must not expire');
+              const bot = [...timers].find(([, timer]) => timer.delay < 1000);
+              if (bot) {
+                timers.delete(bot[0]);
+                bot[1].fn();
+              }
+              assert.equal(state.roundNumber, round, 'Bots must wait for the human to say bito');
+              assert.equal(
+                state.discardCount,
+                discard,
+                'Bots must leave defended cards on the table'
+              );
+            }
             if (state.playableCardIndexes.length)
               game.send('playCard', state.playableCardIndexes[0]);
             else if (state.canTransfer) game.send('transferCard', state.transferCardIndexes[0]);

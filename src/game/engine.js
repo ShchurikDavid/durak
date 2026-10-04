@@ -246,7 +246,14 @@ function createGameEngine({
   function performSurrender(room, index) {
     if (!canSurrender(room, index)) return false;
     const player = room.players[index];
+    const remaining = room.players.filter(
+      (p) => !p.surrendered && (room.game.deck.length > 0 || p.hand.length > 0)
+    );
     player.surrendered = true;
+    if (remaining.length === 2) {
+      finishGame(room, index, `${player.name || 'Игрок'} сдался — поражение.`);
+      return true;
+    }
     const cards = player.hand.splice(0);
     room.game.discard.push(...cards);
     room.game.discardPreview = room.game.discard.slice(-6);
@@ -276,6 +283,7 @@ function createGameEngine({
     clearTurnTimer(room);
     clearTimeoutTimer(room);
     room.game.status = 'finished';
+    room.game.finishedAt = Date.now();
     room.game.loserIndex = loserIndex;
     room.game.winnerIndex = null;
     room.game.resultText = text;

@@ -1,0 +1,693 @@
+/* Shared visual language with mobile/styles.ts. */
+:root {
+  --app-bg: #07100b;
+  --app-panel: #17281e;
+  --app-line: #42503a;
+  --app-text: #f2efdf;
+  --app-muted: #a6b3a5;
+  --app-accent: #f1c40f;
+}
+body.theme-light {
+  --app-bg: #f2efdf;
+  --app-panel: #e4e7da;
+  --app-line: #a5b09a;
+  --app-text: #17281e;
+  --app-muted: #52634f;
+}
+body.theme-blue {
+  --app-bg: #0b1421;
+  --app-panel: #192b40;
+  --app-line: #40546b;
+  --app-text: #f2efdf;
+  --app-muted: #acb9ca;
+}
+body {
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+#lobby {
+  width: min(580px, 100%);
+  min-height: 100dvh;
+  padding: max(24px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right))
+    max(26px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
+  gap: 18px;
+  background: var(--app-bg);
+}
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+#lobby .logo {
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--app-text);
+  text-shadow: none;
+  white-space: nowrap;
+}
+.brand-suit {
+  color: var(--app-accent);
+}
+.app-tagline {
+  color: var(--app-muted);
+  font-size: 12px;
+  text-align: right;
+  line-height: 1.5;
+}
+#lobby .account-panel {
+  position: static;
+  max-width: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  gap: 12px;
+}
+#accountStatus {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--app-muted);
+  overflow-wrap: anywhere;
+}
+#lobby .account-button {
+  min-height: 46px;
+  padding: 10px 12px;
+  background: var(--app-panel);
+  border: 1px solid var(--app-line);
+  border-radius: 17px;
+  color: var(--app-text);
+  font-size: 12px;
+  box-shadow: none;
+}
+#lobby .panel {
+  padding: 18px;
+  border: 1px solid var(--app-line);
+  border-radius: 22px;
+  background: var(--app-panel);
+  box-shadow: none;
+}
+#lobby .play-panel {
+  position: relative;
+  padding: 10px 0 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.hero-copy {
+  min-height: 292px;
+  padding-bottom: 32px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid var(--app-line);
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #78c69c;
+}
+.eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.hero-copy h1 {
+  position: relative;
+  z-index: 1;
+  margin: 22px 0 16px;
+  color: var(--app-text);
+  font-size: 43px;
+  line-height: 48px;
+  font-weight: 900;
+  letter-spacing: -1.6px;
+}
+.hero-copy p {
+  max-width: 57%;
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--app-muted);
+}
+.hero-cards {
+  position: absolute;
+  right: 12px;
+  top: 128px;
+  width: 143px;
+  height: 153px;
+  pointer-events: none;
+}
+.playing-card {
+  position: absolute;
+  width: 87px;
+  height: 126px;
+  object-fit: fill;
+  border-radius: 7px;
+  box-shadow: 0 8px 18px #0005;
+}
+.card-one {
+  left: 0;
+  top: 15px;
+  transform: rotate(-19deg);
+}
+.card-two {
+  left: 56px;
+  top: 0;
+  transform: rotate(13deg);
+}
+#lobby .btn,
+.create-room-dialog .btn {
+  min-height: 50px;
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: none;
+}
+#lobby .primary,
+.create-room-dialog .primary {
+  background: var(--app-accent);
+  color: #07100b;
+  border: 1px solid var(--app-accent);
+}
+#lobby .primary:hover:not(:disabled),
+.create-room-dialog .primary:hover:not(:disabled) {
+  background: #ffda35;
+}
+#lobby .room-create {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 104px;
+  padding: 18px;
+  border-radius: 24px;
+  text-align: left;
+}
+.play-tile-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  height: 52px;
+  border-radius: 13px;
+  background: #d4af37;
+  font-size: 32px;
+}
+.play-tile-copy {
+  flex: 1;
+  min-width: 0;
+}
+.play-tile-copy strong {
+  display: block;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+.play-tile-copy small {
+  display: block;
+  margin-top: 5px;
+  color: #4e4016;
+  font-size: 12px;
+  font-weight: 400;
+}
+.play-tile-arrow {
+  font-size: 30px;
+}
+#lobby .room-share {
+  margin-top: 18px;
+  min-height: 62px;
+  background: var(--app-panel);
+  border: 1px solid var(--app-line);
+  border-radius: 22px;
+  color: var(--app-text);
+}
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.section-heading h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--app-text);
+}
+.section-heading > span {
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.live-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #78c69c;
+}
+#lobby .create input,
+.create-room-dialog input:not([type='radio']):not([type='checkbox']) {
+  min-height: 48px;
+  background: var(--app-bg);
+  color: var(--app-text);
+  border: 1px solid var(--app-line);
+  border-radius: 13px;
+  font-size: 15px;
+}
+#lobby .create input::placeholder {
+  color: var(--app-muted);
+  text-transform: none;
+}
+#lobby .create .btn {
+  padding-inline: 22px;
+}
+#lobby .room {
+  padding: 16px;
+  border: 1px solid var(--app-line);
+  border-radius: 16px;
+  background: var(--app-bg);
+}
+#lobby .room-code {
+  color: var(--app-text);
+  font-size: 21px;
+  letter-spacing: 3px;
+}
+#lobby .room-meta,
+#lobby .room-mode {
+  color: var(--app-muted);
+}
+#lobby .empty {
+  padding: 20px 8px;
+  color: var(--app-muted);
+  text-align: center;
+  font-size: 14px;
+  line-height: 22px;
+}
+.lobby-footer {
+  text-align: center;
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 10px;
+  line-height: 19px;
+  letter-spacing: 0.6px;
+}
+#lobby .app-nav {
+  position: static;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--app-line);
+  background: var(--app-bg);
+  z-index: 20;
+}
+#lobby .app-nav .btn {
+  width: auto;
+  min-width: 0;
+  min-height: 54px;
+  padding: 8px 4px;
+  margin: 0;
+  background: var(--app-panel);
+  border: 0;
+  border-radius: 16px;
+  font-size: 11px;
+  color: var(--app-muted);
+  box-shadow: none;
+}
+#lobby .app-nav .btn:hover {
+  color: var(--app-accent);
+}
+#lobby button:focus-visible,
+#lobby input:focus-visible,
+.create-room-dialog button:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+.create-room-dialog {
+  color: var(--app-text);
+  border: 1px solid var(--app-line);
+  border-radius: 30px;
+  background: var(--app-bg);
+}
+.create-room-dialog::backdrop {
+  background: #000a;
+  backdrop-filter: blur(6px);
+}
+.create-room-dialog h2 {
+  color: var(--app-text);
+}
+.create-room-hint {
+  color: var(--app-muted);
+}
+.create-room-dialog .btn:not(.primary),
+#cancelCreateRoom {
+  color: var(--app-text);
+  background: var(--app-panel);
+  border-color: var(--app-line);
+}
+.create-room-dialog .mode-option label {
+  background: var(--app-panel);
+  border-color: var(--app-line);
+  color: var(--app-muted);
+  border-radius: 14px;
+}
+.create-room-dialog .mode-option input:checked + label {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #07100b;
+  box-shadow: none;
+}
+@media (max-width: 380px) {
+  #lobby {
+    padding-inline: 16px;
+  }
+  .app-tagline {
+    font-size: 10px;
+  }
+  #lobby .account-button {
+    font-size: 11px;
+  }
+  .hero-copy h1 {
+    font-size: 39px;
+    line-height: 44px;
+  }
+  .hero-cards {
+    right: 6px;
+    top: 145px;
+    transform: scale(0.85);
+    transform-origin: right top;
+  }
+  .hero-copy p {
+    max-width: 55%;
+    font-size: 13px;
+  }
+  .play-tile-copy strong {
+    font-size: 18px;
+  }
+  .play-tile-copy small {
+    font-size: 11px;
+  }
+}
+
+/* Use the desktop canvas; retain the compact layout on phones. */
+.match-history-panel {
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: normal;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+.history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.history-heading h2 {
+  margin: 0;
+}
+.match-history-panel::-webkit-scrollbar,
+#matchHistory::-webkit-scrollbar {
+  display: none;
+}
+#matchHistory {
+  max-height: min(520px, calc(100dvh - 180px));
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  scrollbar-width: none;
+}
+#matchHistory article {
+  margin-top: 12px;
+  padding: 16px;
+}
+#matchHistory .history-win {
+  background: #153a29;
+  border-color: #4bbd7d;
+  border-left-width: 4px;
+}
+#matchHistory .history-loss {
+  background: #3d1c24;
+  border-color: #e36973;
+  border-left-width: 4px;
+}
+#matchHistory .history-draw {
+  background: #252c29;
+  border-color: #87948d;
+  border-left-width: 4px;
+}
+#matchHistory .history-win h3 {
+  color: #9ae6b4;
+}
+#matchHistory .history-loss h3 {
+  color: #ffaaaa;
+}
+
+@media (min-width: 760px) {
+  #lobby {
+    width: 100%;
+    max-width: 1800px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(280px, 1fr) auto;
+    grid-template-areas:
+      'header header'
+      'toolbar toolbar'
+      'play join'
+      'play rooms'
+      'footer footer';
+    gap: 28px 40px;
+    padding: 28px clamp(32px, 5vw, 96px) 20px;
+    align-items: start;
+  }
+  .app-header {
+    grid-area: header;
+    min-height: 46px;
+  }
+  #lobby .account-panel {
+    grid-area: account;
+    justify-content: flex-end;
+    margin: 0;
+  }
+  #lobby .play-panel {
+    grid-area: play;
+    align-self: stretch;
+    padding: 24px 0 0;
+    display: flex;
+    flex-direction: column;
+  }
+  #lobby .join-panel {
+    grid-area: join;
+    margin-top: 24px;
+    padding: 24px;
+  }
+  #lobby .rooms-panel {
+    grid-area: rooms;
+    align-self: stretch;
+    padding: 24px;
+  }
+  .hero-copy {
+    min-height: 340px;
+    flex: 1;
+  }
+  .hero-copy h1 {
+    font-size: clamp(44px, 4.2vw, 76px);
+    line-height: 1.06;
+    margin-top: 28px;
+  }
+  .hero-copy p {
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .hero-cards {
+    top: 180px;
+    right: 22px;
+    transform: scale(1.15);
+    transform-origin: right top;
+  }
+  #lobby .room-create {
+    margin-top: 24px;
+  }
+  #lobby .room-share {
+    margin-top: 16px;
+  }
+  .lobby-footer {
+    grid-area: footer;
+    padding-top: 8px;
+  }
+  #lobby .app-nav {
+    grid-area: nav;
+    position: static;
+    transform: none;
+    width: 100%;
+    padding: 0 0 16px;
+    grid-template-columns: repeat(3, minmax(0, 180px));
+    justify-content: end;
+  }
+  #lobby .app-nav .btn {
+    font-size: 13px;
+  }
+}
+@media (min-width: 1200px) {
+  #lobby {
+    column-gap: clamp(48px, 6vw, 112px);
+  }
+  .hero-copy {
+    min-height: 390px;
+  }
+  .hero-cards {
+    top: 195px;
+    right: 34px;
+    transform: scale(1.5);
+  }
+  .section-heading h2 {
+    font-size: 21px;
+  }
+  .section-heading > span {
+    font-size: 12px;
+  }
+  #lobby .empty {
+    padding: 64px 16px;
+  }
+}
+
+.rules-dialog h3 {
+  color: var(--app-accent);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 24px 0 8px;
+}
+.rules-dialog p {
+  color: var(--app-muted);
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 0;
+}
+.rules-dialog form {
+  margin-top: 24px;
+}
+.rules-dialog form .btn {
+  width: 100%;
+}
+
+/* Keep account actions and game controls on the same desktop baseline. */
+.lobby-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+#lobby .lobby-toolbar .app-nav {
+  padding: 0;
+  border: 0;
+}
+.lobby-footer p {
+  margin: 0;
+}
+.rules-link {
+  display: inline-block;
+  padding: 10px 8px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--app-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rules-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (min-width: 760px) {
+  .lobby-toolbar {
+    grid-area: toolbar;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  #lobby .lobby-toolbar .app-nav {
+    width: auto;
+    flex: 1;
+    justify-content: start;
+  }
+  #lobby .lobby-toolbar .account-panel {
+    flex-shrink: 0;
+  }
+  #lobby .lobby-toolbar .app-nav .btn {
+    min-height: 46px;
+  }
+}
+/* Desktop masthead: brand, controls and account share the very first row. */
+@media (min-width: 1000px) {
+  #lobby {
+    grid-template-rows: auto auto minmax(280px, 1fr) auto;
+    grid-template-areas:
+      'header toolbar'
+      'play join'
+      'play rooms'
+      'footer footer';
+  }
+  .app-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-content: flex-start;
+    align-self: center;
+    pointer-events: none;
+  }
+  .app-tagline {
+    display: none;
+  }
+  .lobby-toolbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin-left: 210px;
+    align-self: center;
+  }
+  #lobby .lobby-toolbar .app-nav {
+    justify-content: center;
+  }
+}
+
+#lobby .lobby-toolbar .app-nav {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 46px;
+  align-items: center;
+}
+.lobby-patreon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 13px;
+  background: #0b0b0b;
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.35);
+}
+.lobby-patreon img {
+  object-fit: contain;
+}
+.lobby-patreon:hover {
+  background: #161616;
+}
+.lobby-patreon:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+@media (min-width: 760px) {
+  #lobby .lobby-toolbar .app-nav {
+    grid-template-columns: repeat(3, minmax(0, 180px)) 46px;
+  }
+}

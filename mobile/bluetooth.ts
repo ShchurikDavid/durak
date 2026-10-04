@@ -2,14 +2,14 @@ import { NativeModules, NativeEventEmitter, PermissionsAndroid, Platform } from 
 import { createBluetoothHost } from './bluetooth-host';
 import type { GameState, Options, Session } from './types';
 const native = NativeModules.GameBluetooth;
-type Event = { type: string; id: string; value: string };
-export type Device = { id: string; name: string };
+type Event = { type: string; id: string; value: string; isPhone?: boolean };
+export type Device = { id: string; name: string; isPhone: boolean };
 export class BluetoothGame implements Session {
   private disposed = false;
   private hostGame: ReturnType<typeof createBluetoothHost> | null = null;
   private peer = '';
   private isHost = false;
-  private roomsFound = new Set<string>();
+  private devicesFound = new Set<string>();
   private accepting = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private sub;
@@ -26,16 +26,16 @@ export class BluetoothGame implements Session {
     this.sub = new NativeEventEmitter(native).addListener('durakBluetooth', (raw) => {
       const event = raw as Event;
       if (this.disposed) return;
-      if (event.type === 'room' && !this.peer && !this.isHost) {
-        this.roomsFound.add(event.id);
-        callbacks.device({ id: event.id, name: event.value });
+      if (event.type === 'device' && !this.peer && !this.isHost) {
+        this.devicesFound.add(event.id);
+        callbacks.device({ id: event.id, name: event.value, isPhone: event.isPhone === true });
       }
       if (event.type === 'scanStatus' && !this.peer && !this.isHost) callbacks.status(event.value);
       if (event.type === 'scanEnd' && !this.peer && !this.isHost)
         callbacks.status(
-          this.roomsFound.size
-            ? 'Найдены комнаты игры. Выберите телефон создателя.'
-            : 'Открытых комнат не найдено. Пусть друг создаст стол и включит видимость, затем повторите поиск.'
+          this.devicesFound.size
+            ? 'Поиск завершён. Выберите телефон друга, на котором создан стол.'
+            : 'Устройства не найдены. Пусть друг создаст стол и включит видимость, затем повторите поиск.'
         );
       if (event.type === 'error') this.close(event.value);
       if (event.type === 'disconnected') {
@@ -98,10 +98,8 @@ export class BluetoothGame implements Session {
   }
   async scan() {
     await this.prepare();
-    this.roomsFound.clear();
-    this.callbacks.status(
-      'Ищем открытые комнаты рядом… Проверка телефонов может занять до минуты.'
-    );
+    this.devicesFound.clear();
+    this.callbacks.status('Ищем телефоны рядом… Выберите телефон друга, на котором создан стол.');
     await native.scan();
   }
   async host(options: Options) {

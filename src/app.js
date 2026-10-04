@@ -21,6 +21,7 @@ function createApplication(options = {}) {
     }
   });
   const auth = createAuth(options);
+  app.get('/api/health', (_req, res) => res.json({ app: 'durak', status: 'ok' }));
   app.use(express.json({ limit: '16kb' }));
   auth.install(app, (identity) => {
     for (const socket of io.sockets.sockets.values()) {
@@ -51,7 +52,7 @@ function createApplication(options = {}) {
     next();
   });
   app.use(express.static(path.join(__dirname, '../public')));
-  const service = createRoomService(io, options);
+  const service = createRoomService(io, { ...options, onPlayerState: auth.recordState });
   registerSocketHandlers(io, service);
   return {
     app,

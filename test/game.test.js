@@ -494,12 +494,14 @@ test('defender surrender finishes the round, preserves cards and resets on a new
       room.players.reduce((n, p) => n + p.hand.length, 0),
     36
   );
-  assert.equal(api.performSurrender(room, 0), false);
+  assert.equal(api.performSurrender(room, 0), true);
+  assert.equal(room.game.status, 'finished');
+  assert.equal(room.game.loserIndex, 0);
   api.startGame(room);
   assert.ok(room.players.every((p) => !p.surrendered && p.hand.length === 6));
 });
 
-test('attacker surrender preserves an ongoing defense and rejects two-player games', () => {
+test('attacker surrender preserves an ongoing defense and ends two-player games', () => {
   const api = setup(),
     room = api.room(3);
   room.game.attackerIndex = 0;
@@ -513,7 +515,10 @@ test('attacker surrender preserves an ongoing defense and rejects two-player gam
   assert.equal(room.players[0].hand.length, 0);
   assert.equal(room.game.attackerIndex, 2);
   const duel = api.room(2);
-  assert.equal(api.performSurrender(duel, 0), false);
+  assert.equal(api.performSurrender(duel, 0), true);
+  assert.equal(duel.game.status, 'finished');
+  assert.equal(duel.game.loserIndex, 0);
+  assert.equal(duel.players[0].surrendered, true);
   assert.equal(api.performSurrender(duel, -1), false);
 });
 

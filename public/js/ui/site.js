@@ -53,7 +53,7 @@ function injectPatreon() {
   link.title = 'Поддержать проект на Patreon';
   link.setAttribute('aria-label', 'Поддержать проект на Patreon');
   link.innerHTML = `<img src="${PATREON_LOGO}" alt="Patreon">`;
-  document.body.appendChild(link);
+  ($('game') || document.body).appendChild(link);
 }
 
 function createMobileActions() {
@@ -73,9 +73,37 @@ function createMobileActions() {
   $('mobileLeave').onclick = () => $('leave')?.click();
 }
 
+function fitGameViewport() {
+  const game = $('game');
+  if (!game) return;
+  const height = window.visualViewport?.height || window.innerHeight;
+  const compact = window.innerWidth <= 600;
+  game.style.setProperty(
+    '--card-w',
+    `${Math.max(36, Math.min(120, height * (compact ? 0.105 : 0.12)))}px`
+  );
+  game.style.setProperty('--back-w', `${Math.max(24, Math.min(78, height * 0.075))}px`);
+}
+
 export function initSiteUI() {
+  fitGameViewport();
+  window.addEventListener('resize', fitGameViewport);
+  window.visualViewport?.addEventListener('resize', fitGameViewport);
   addSiteIcons();
   relocateRoomBadge();
   injectPatreon();
+  const header = document.querySelector('#game .durak-room-header');
+  if (header) {
+    let controls = header.querySelector('.game-header-controls');
+    if (!controls) {
+      controls = document.createElement('div');
+      controls.className = 'game-header-controls';
+      header.appendChild(controls);
+    }
+    for (const id of ['music', 'gameSettings', 'durakPatreonFloat']) {
+      const control = $(id);
+      if (control) controls.appendChild(control);
+    }
+  }
   createMobileActions();
 }

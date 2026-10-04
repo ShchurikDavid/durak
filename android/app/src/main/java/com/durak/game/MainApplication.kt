@@ -9,7 +9,7 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 
 class MainApplication : Application(), ReactApplication {
     override val reactHost: ReactHost by lazy {
-        getDefaultReactHost(applicationContext, PackageList(this).packages.apply { add(GameAudioPackage()); add(GameBluetoothPackage()) }, useDevSupport = false)
+        getDefaultReactHost(applicationContext, PackageList(this).packages.apply { add(GameAudioPackage()); add(GameBluetoothPackage()); add(GameHapticsPackage()) }, useDevSupport = false)
     }
     override fun onCreate() { super.onCreate(); loadReactNative(this) }
 }

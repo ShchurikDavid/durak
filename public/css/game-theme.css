@@ -1,0 +1,371 @@
+/* Game surfaces follow the palette and shapes in mobile/styles.ts. */
+#game {
+  width: min(1800px, 100%);
+  padding: 24px clamp(16px, 3vw, 56px);
+  gap: 12px;
+  color: var(--app-text);
+}
+#game > .durak-room-header {
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--app-line);
+}
+#game > .durak-room-header #roomBadge {
+  max-width: 100% !important;
+  background: var(--app-panel);
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  color: var(--app-text);
+  padding: 13px 16px;
+  font-weight: 600;
+  white-space: normal;
+}
+.game-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#game .game-header-controls #music,
+#game .game-header-controls #gameSettings,
+#game .game-header-controls .durak-patreon-float {
+  position: static;
+  margin: 0;
+  min-height: 46px;
+  height: 46px;
+  border-radius: 13px;
+  box-shadow: none;
+}
+#game .game-header-controls #music {
+  background: var(--app-panel);
+  border-color: var(--app-line);
+  color: var(--app-accent);
+}
+#game #status {
+  background: var(--app-panel);
+  color: var(--app-text);
+  border: 1px solid var(--app-line);
+  border-radius: 15px;
+  box-shadow: none;
+  font-weight: 700;
+}
+#game .opponent-label,
+#game .my-label {
+  color: var(--app-muted);
+  font-weight: 600;
+  letter-spacing: 0.6px;
+}
+#game #table {
+  background: #145f44;
+  border: 2px solid #d4af37 !important;
+  outline: none;
+  border-radius: 24px !important;
+  box-shadow: none;
+}
+#game #table::before {
+  display: none;
+}
+#game #table:empty::after {
+  content: '♠';
+  color: #216d4f;
+  font-size: 80px;
+  line-height: 1;
+  pointer-events: none;
+}
+#game .info {
+  background: var(--app-panel);
+  border: 1px solid var(--app-line);
+  border-radius: 22px;
+  padding: 18px;
+  gap: 14px;
+}
+#game .info-trump-label {
+  color: var(--app-muted);
+}
+#game #deckCount {
+  color: var(--app-accent);
+}
+#game .btn {
+  background: var(--app-panel);
+  border: 1px solid var(--app-line);
+  border-radius: 15px;
+  color: var(--app-text);
+  box-shadow: none;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding: 12px;
+}
+#game #bito,
+#game #restart {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #07100b;
+}
+#game #take {
+  background: #274132;
+  border-color: #78c69c;
+  color: #f2efdf;
+}
+#game #transfer[aria-pressed='true'] {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #07100b;
+}
+#game #surrender {
+  color: #ffb4ab;
+  border-color: #80504e;
+}
+#game .btn:disabled {
+  background: var(--app-panel) !important;
+  border-color: var(--app-line) !important;
+  color: var(--app-muted) !important;
+  opacity: 0.45;
+}
+#game .btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+#game button:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+#game .mini-seat {
+  background: var(--app-panel);
+  border-color: var(--app-line);
+  border-radius: 18px;
+  box-shadow: none;
+}
+#game .mini-seat-name {
+  color: var(--app-text);
+  font-weight: 600;
+}
+#game .mini-seat.me {
+  border-color: var(--app-accent);
+}
+#game .mini-seat.attacker {
+  border-color: #78c69c;
+}
+#game .mini-seat.defender {
+  border-color: #e69791;
+  box-shadow: none;
+}
+#game .timer-chip {
+  background: var(--app-panel);
+  border-color: var(--app-line);
+  border-radius: 12px;
+  color: var(--app-text);
+}
+#game .timer-chip.warning {
+  color: #f1c40f;
+  border-color: #d4af37;
+}
+#game .timer-chip.danger {
+  color: #ffb4ab;
+  border-color: #a92732;
+}
+body .settings-modal,
+body .skin-modal,
+body .result-modal,
+#timeoutDialog {
+  background: var(--app-bg);
+  color: var(--app-text);
+  border: 1px solid var(--app-line);
+  border-radius: 26px;
+}
+.settings-title,
+.skin-title {
+  color: var(--app-text);
+  font-weight: 800;
+}
+.setting-sub,
+.result-sub,
+.timeout-help {
+  color: var(--app-muted);
+}
+body .setting-toggle,
+body .theme-select,
+.skin-card,
+#resultLeave,
+#resultClose,
+#closeSettings,
+#closeSkins {
+  background: var(--app-panel);
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  color: var(--app-text);
+  box-shadow: none;
+}
+#resultRestart,
+#voteResume {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #07100b;
+  border-radius: 15px;
+}
+@media (max-width: 600px) {
+  #game {
+    padding: max(10px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  #game > .durak-room-header {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 0 10px;
+  }
+  #game > .durak-room-header #roomBadge {
+    width: 100%;
+    text-align: center;
+  }
+  #game .game-header-controls {
+    justify-content: center;
+  }
+  #game #table:empty::after {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+  #game .mobile-top-actions .btn {
+    padding: 8px;
+  }
+}
+
+/* Size the board and hands to the viewport, rather than stacking fixed heights. */
+html:has(#game:not(.hidden)),
+body:has(#game:not(.hidden)) {
+  height: 100%;
+  overflow: hidden;
+}
+#game {
+  height: 100dvh;
+  min-height: 0;
+  padding-block: 12px;
+  gap: 6px;
+}
+#game > .durak-room-header {
+  flex: 0 0 auto;
+  padding-bottom: 8px;
+}
+#game .top {
+  min-height: 0;
+  flex: 0 0 auto;
+}
+#game #status {
+  padding: 7px 14px;
+}
+#game #opponent {
+  min-height: 0;
+  flex: 0 0 auto;
+}
+#game #arena {
+  min-height: 0 !important;
+  flex: 1 1 0;
+}
+#game #table {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100%;
+  box-sizing: border-box;
+}
+#game #table .pair {
+  width: min(var(--card-w), 16vh);
+  height: min(calc(var(--card-w) * 1.4), 22.4vh);
+}
+#game #table .card {
+  width: 80%;
+  height: 80%;
+}
+#game #hand {
+  min-height: 0;
+  flex: 0 0 auto;
+  padding-block: 4px;
+}
+#game .actions {
+  gap: 8px;
+}
+#game .actions .btn {
+  min-height: 50px;
+  padding: 12px;
+  font-size: 16px;
+}
+@media (min-width: 901px) {
+  #game #arena {
+    grid-template-columns: 200px minmax(0, 1fr) 175px;
+  }
+}
+@media (min-width: 601px) and (max-height: 700px) {
+  #game .actions {
+    gap: 5px;
+  }
+  #game .actions .btn {
+    min-height: 40px;
+    padding: 7px;
+    font-size: 14px;
+  }
+}
+#game .info {
+  min-height: 0;
+  padding: 12px;
+  gap: 8px;
+}
+#game #trump img {
+  width: min(72px, 9vh);
+  height: auto;
+}
+@media (max-width: 600px) {
+  #game {
+    gap: 4px;
+    padding: 6px 10px;
+  }
+  #game > .durak-room-header {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  #game > .durak-room-header #roomBadge {
+    width: auto;
+    flex: 1;
+    font-size: 10px;
+    padding: 6px !important;
+  }
+  #game .game-header-controls {
+    gap: 4px;
+  }
+  #game .game-header-controls #music,
+  #game .game-header-controls #gameSettings,
+  #game .game-header-controls .durak-patreon-float {
+    min-height: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 5px;
+    font-size: 10px;
+  }
+  #game .game-header-controls .durak-patreon-float {
+    width: 36px;
+  }
+  #game #arena {
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    align-items: stretch;
+  }
+  #game #table {
+    padding: 8px !important;
+    gap: 4px !important;
+  }
+  #game #table .pair {
+    width: min(100%, 7vh);
+    height: auto;
+  }
+  #game .mobile-top-actions .btn {
+    min-height: 32px;
+    padding: 4px;
+  }
+  #game .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #game .actions .btn {
+    min-height: 30px;
+    font-size: 10px;
+    padding: 4px;
+  }
+  #game .info {
+    flex-direction: row;
+  }
+}

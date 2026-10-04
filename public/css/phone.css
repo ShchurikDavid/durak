@@ -1,0 +1,296 @@
+/* Phone layouts use wrapping and normal document flow instead of clipping content. */
+@media (max-width: 600px) {
+  #lobby,
+  #game {
+    min-width: 0;
+    padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+  }
+  .app-header,
+  #lobby .account-panel,
+  .account-actions {
+    flex-wrap: wrap;
+  }
+  .app-header {
+    gap: 6px 12px;
+  }
+  .app-tagline {
+    text-align: left;
+  }
+  #lobby .lobby-toolbar .app-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #lobby .app-nav .btn,
+  #lobbyMusic,
+  #lobbyMusic span {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #lobby .app-nav .btn {
+    height: auto;
+    min-height: 48px;
+    padding: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  #lobby .lobby-patreon {
+    width: 100%;
+    height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--app-text);
+    font-size: 12px;
+  }
+  .lobby-patreon::after {
+    content: 'Patreon';
+  }
+  #lobby .account-panel > *,
+  .account-actions {
+    min-width: 0;
+  }
+  #lobby .panel {
+    padding: 14px;
+  }
+  #lobby .play-panel {
+    padding: 10px 0 0;
+  }
+  .hero-copy {
+    min-height: 0;
+    padding-bottom: 0;
+  }
+  .hero-copy h1 {
+    font-size: clamp(30px, 9.5vw, 43px);
+    line-height: 1.12;
+    letter-spacing: -1px;
+    margin-block: 18px 14px;
+  }
+  .hero-copy p {
+    max-width: none;
+    font-size: 14px;
+  }
+  .hero-cards {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 14px 18px 8px auto;
+    transform: none;
+  }
+  #lobby .room-create {
+    min-height: 90px;
+    padding: 14px;
+    gap: 10px;
+    white-space: normal;
+  }
+  .play-tile-copy strong {
+    font-size: 18px;
+  }
+  .play-tile-copy small {
+    line-height: 1.5;
+  }
+  #lobby .room {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  #lobby .create input,
+  .account-form input {
+    font-size: 16px;
+  }
+
+  .settings-backdrop,
+  .skin-backdrop,
+  .result-backdrop {
+    padding: 10px;
+  }
+  body .settings-modal,
+  body .skin-modal,
+  body .result-modal,
+  .create-room-dialog {
+    min-width: 0;
+    max-width: 100%;
+    padding: 16px;
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+  }
+  .setting-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .setting-row > *,
+  .setting-control {
+    min-width: 0;
+  }
+  .setting-range {
+    max-width: 100%;
+  }
+  .create-room-actions {
+    flex-wrap: wrap;
+  }
+  .create-room-dialog .mode-option label {
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: normal;
+  }
+
+  html:has(#game:not(.hidden)),
+  body:has(#game:not(.hidden)) {
+    height: auto;
+    overflow-y: auto;
+  }
+  #game {
+    height: auto;
+    min-height: 100dvh;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  #game > .durak-room-header {
+    flex-wrap: wrap;
+  }
+  #game > .durak-room-header #roomBadge {
+    flex: 1 1 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  #game #arena {
+    flex: 1 0 auto;
+    grid-template-rows: auto minmax(210px, 1fr) auto !important;
+    min-width: 0;
+  }
+  #game #table {
+    min-height: 210px !important;
+  }
+  #game .actions .btn {
+    min-width: 0;
+    min-height: 44px;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  #game .info {
+    min-width: 0;
+    flex-wrap: wrap;
+    padding: 8px;
+  }
+  #game #hand {
+    max-width: 100%;
+  }
+}
+@media (max-width: 380px) {
+  #game #arena {
+    grid-template-areas: 'seats seats' 'table table' 'info info' 'actions actions' !important;
+    grid-template-rows: auto minmax(210px, 1fr) auto auto !important;
+  }
+  .setting-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .setting-control,
+  .setting-range {
+    width: 100%;
+  }
+  .setting-toggle {
+    min-height: 44px;
+  }
+  .skin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #lobby .account-panel {
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+/* Compact, matching toolbar buttons on phones. Keep full-size touch targets. */
+@media (max-width: 600px) {
+  #lobby {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand account'
+      'navigation navigation'
+      'status status'
+      'play play'
+      'join join'
+      'rooms rooms'
+      'footer footer';
+    align-content: start;
+    column-gap: 8px;
+  }
+  #lobby .app-header,
+  #lobby .lobby-toolbar,
+  #lobby .lobby-toolbar .account-panel {
+    display: contents;
+  }
+  #lobby .logo {
+    grid-area: brand;
+    text-align: left;
+    align-self: center;
+    font-size: 21px;
+    letter-spacing: 2px;
+  }
+  #lobby .app-tagline {
+    display: none;
+  }
+  #lobby .account-actions {
+    grid-area: account;
+    justify-self: end;
+    flex-wrap: nowrap;
+  }
+  #lobby .account-button {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  #lobby #accountStatus {
+    grid-area: status;
+  }
+  #lobby .play-panel {
+    grid-area: play;
+  }
+  #lobby .join-panel {
+    grid-area: join;
+  }
+  #lobby .rooms-panel {
+    grid-area: rooms;
+  }
+  #lobby .lobby-footer {
+    grid-area: footer;
+  }
+  #lobby .lobby-toolbar .app-nav {
+    grid-area: navigation;
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-content: start;
+    gap: 10px;
+  }
+  #lobby .lobby-toolbar .app-nav .btn,
+  #lobby .lobby-toolbar .app-nav .lobby-patreon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    gap: 0;
+    border: 1px solid var(--app-line);
+    border-radius: 13px;
+    background: var(--app-panel);
+    box-shadow: none;
+    font-size: 0;
+  }
+  #lobby .lobby-toolbar .app-nav .btn span {
+    display: none;
+  }
+  #lobby .lobby-toolbar .app-nav .lobby-patreon {
+    background: #0b0b0b;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+  #lobby .lobby-toolbar .app-nav img {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+  }
+  #lobby .lobby-patreon::after {
+    content: none;
+  }
+}

@@ -106,7 +106,7 @@ test('Bluetooth transport joins a real engine, exchanges commands and cleans sub
   assert.equal(emitters.host.listenerCount('durakBluetooth'), 0);
   assert.equal(emitters.guest.listenerCount('durakBluetooth'), 0);
 });
-test('Bluetooth search only exposes confirmed game rooms, not generic devices', async () => {
+test('Bluetooth discovery publishes devices immediately with phone classification and no room probe', async () => {
   const events = new EventEmitter();
   const found = [];
   let status = '';
@@ -124,18 +124,33 @@ test('Bluetooth search only exposes confirmed game rooms, not generic devices', 
   });
   try {
     await client.scan();
-    events.emit('durakBluetooth', { type: 'device', id: 'headphones', value: 'Galaxy Buds' });
-    events.emit('durakBluetooth', { type: 'device', id: 'phone', value: 'Телефон без комнаты' });
+    events.emit('durakBluetooth', {
+      type: 'device',
+      id: 'headphones',
+      value: 'Galaxy Buds',
+      isPhone: false
+    });
+    events.emit('durakBluetooth', {
+      type: 'device',
+      id: 'phone',
+      value: 'Телефон друга',
+      isPhone: true
+    });
+    events.emit('durakBluetooth', {
+      type: 'device',
+      id: 'unknown',
+      value: 'Неизвестное устройство'
+    });
+    assert.deepEqual(found, [
+      { id: 'headphones', name: 'Galaxy Buds', isPhone: false },
+      { id: 'phone', name: 'Телефон друга', isPhone: true },
+      { id: 'unknown', name: 'Неизвестное устройство', isPhone: false }
+    ]);
     events.emit('durakBluetooth', { type: 'scanEnd' });
-    assert.equal(found.length, 0);
-    assert.match(status, /не найдено/);
+    assert.match(status, /Выберите телефон друга/);
     await client.scan();
-    events.emit('durakBluetooth', { type: 'scanStatus', value: 'Проверяем комнаты' });
-    assert.equal(status, 'Проверяем комнаты');
-    events.emit('durakBluetooth', { type: 'room', id: 'host', value: 'Телефон друга' });
     events.emit('durakBluetooth', { type: 'scanEnd' });
-    assert.deepEqual(found, [{ id: 'host', name: 'Телефон друга' }]);
-    assert.match(status, /Найдены комнаты/);
+    assert.match(status, /Устройства не найдены/);
   } finally {
     client.dispose();
   }

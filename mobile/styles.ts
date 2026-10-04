@@ -11,6 +11,65 @@ export const colors = {
   red: '#A92732'
 };
 export const s = StyleSheet.create({
+  historyModalWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
+  historyModal: {
+    width: '100%',
+    maxWidth: 520,
+    maxHeight: '90%',
+    padding: 16,
+    borderRadius: 24,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.line
+  },
+  historyWin: { backgroundColor: '#153A29', borderColor: '#4BBD7D', borderLeftWidth: 4 },
+  historyLoss: { backgroundColor: '#3D1C24', borderColor: '#E36973', borderLeftWidth: 4 },
+  historyDraw: { backgroundColor: '#252C29', borderColor: '#87948D', borderLeftWidth: 4 },
+  resultDialog: {
+    width: '100%',
+    maxWidth: 440,
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.bg,
+    alignItems: 'stretch'
+  },
+  resultDialogLost: { borderColor: '#D74747' },
+  resultEmoji: { fontSize: 54, textAlign: 'center', marginTop: 8, marginBottom: 8 },
+  resultHeading: { fontSize: 25, fontWeight: '900', color: colors.accent, textAlign: 'center' },
+  resultHeadingLost: { color: '#FF8585' },
+  resultDescription: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 20
+  },
+  resultButtons: { gap: 10 },
+  timeoutShade: { flex: 1, backgroundColor: '#000000A0' },
+  timeoutScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  timeoutPanel: {
+    width: '100%',
+    maxWidth: 440,
+    padding: 24,
+    gap: 22,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
+    backgroundColor: colors.bg
+  },
+  timeoutTitle: { color: colors.cream, fontSize: 25, fontWeight: '800', textAlign: 'center' },
+  timeoutCountdown: {
+    color: '#FFE0AD',
+    fontSize: 56,
+    fontWeight: '900',
+    textAlign: 'center',
+    fontVariant: ['tabular-nums']
+  },
+  timeoutDescription: { color: colors.cream, fontSize: 15, lineHeight: 23, textAlign: 'center' },
+  timeoutHelp: { color: colors.muted, fontSize: 13, lineHeight: 21, textAlign: 'center' },
   eye: {
     width: 22,
     height: 14,
@@ -277,6 +336,16 @@ export const s = StyleSheet.create({
     paddingVertical: 10
   },
   iconButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  patreonButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF29',
+    borderRadius: 13,
+    backgroundColor: '#0B0B0B'
+  },
   navIcon: { fontSize: 28, color: colors.cream },
   roundBadge: {
     color: colors.muted,

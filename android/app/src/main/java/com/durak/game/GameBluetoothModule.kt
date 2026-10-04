@@ -6,7 +6,6 @@ import android.content.*
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelUuid
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
@@ -33,44 +32,19 @@ class GameBluetoothModule(private val context: ReactApplicationContext) : ReactC
     @Volatile private var generation = 0
     private var pending: Promise? = null
     private val searchHandler = Handler(Looper.getMainLooper())
-    private val candidates = ArrayDeque<BluetoothDevice>()
-    private val seen = mutableSetOf<String>()
-    private var checking: String? = null
     @Volatile private var searching = false
     private var inquiryStarted = false
-    private val serviceTimeout = Runnable { checking = null; checkNextService() }
     private val searchTimeout = Runnable { finishSearch() }
 
-    // Request service discovery and only display phones advertising our room UUID.
-    // A paired-device entry on its own never becomes a room result.
-    private fun candidate(device: BluetoothDevice) {
+    private fun emitDevice(device: BluetoothDevice) {
         if (!searching) return
-        val major = device.bluetoothClass?.majorDeviceClass
-        if (major != null && major != 0 && major != BluetoothClass.Device.Major.PHONE && major != BluetoothClass.Device.Major.UNCATEGORIZED) return
-        if (seen.add(device.address)) candidates.addLast(device)
-    }
-    private fun checkNextService() {
-        if (!searching || checking != null) return
-        while (candidates.isNotEmpty()) {
-            val device = candidates.removeFirst()
-            checking = device.address
-            try {
-                if (device.fetchUuidsWithSdp()) {
-                    searchHandler.postDelayed(serviceTimeout, 8000)
-                    return
-                }
-            } catch (_: Exception) {}
-            checking = null
-        }
-        finishSearch()
+        emit("device", device.address, device.name ?: "Устройство Bluetooth",
+            device.bluetoothClass?.majorDeviceClass == BluetoothClass.Device.Major.PHONE)
     }
     private fun finishSearch() {
         if (!searching) return
         searching = false
-        checking = null
-        candidates.clear()
-        seen.clear()
-        searchHandler.removeCallbacks(serviceTimeout)
+        inquiryStarted = false
         searchHandler.removeCallbacks(searchTimeout)
         try { adapter?.cancelDiscovery() } catch (_: Exception) {}
         emit("scanEnd")
@@ -84,8 +58,8 @@ class GameBluetoothModule(private val context: ReactApplicationContext) : ReactC
             else promise.resolve(adapter?.name ?: "Телефон")
         }
     }
-    private fun emit(type: String, id: String = "", value: String = "") {
-        val map = Arguments.createMap().apply { putString("type", type); putString("id", id); putString("value", value) }
+    private fun emit(type: String, id: String = "", value: String = "", isPhone: Boolean = false) {
+        val map = Arguments.createMap().apply { putString("type", type); putString("id", id); putString("value", value); putBoolean("isPhone", isPhone) }
         context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java).emit("durakBluetooth", map)
     }
     private val receiver = object : BroadcastReceiver() {
@@ -93,25 +67,10 @@ class GameBluetoothModule(private val context: ReactApplicationContext) : ReactC
             when (intent.action) {
                 BluetoothDevice.ACTION_FOUND -> {
                     val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) ?: return
-                    candidate(device)
+                    emitDevice(device)
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED -> if (searching) { inquiryStarted = true }
-                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> if (searching && inquiryStarted) {
-                    inquiryStarted = false
-                    emit("scanStatus", value = "Проверяем, на каких телефонах открыта комната…")
-                    checkNextService()
-                }
-                BluetoothDevice.ACTION_UUID -> {
-                    val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE) ?: return
-                    if (!searching || checking != device.address) return
-                    val services = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID)
-                    if (services?.any { (it as? ParcelUuid)?.uuid == uuid } == true) {
-                        emit("room", device.address, device.name ?: "Комната Дурак")
-                    }
-                    searchHandler.removeCallbacks(serviceTimeout)
-                    checking = null
-                    checkNextService()
-                }
+                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> if (searching && inquiryStarted) { finishSearch() }
                 BluetoothAdapter.ACTION_STATE_CHANGED -> if (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) == BluetoothAdapter.STATE_OFF) {
                     stopInternal(); emit("error", value = "Bluetooth выключен")
                 }
@@ -120,7 +79,7 @@ class GameBluetoothModule(private val context: ReactApplicationContext) : ReactC
     }
     init {
         context.addActivityEventListener(activityListener)
-        val filter = IntentFilter().apply { addAction(BluetoothDevice.ACTION_FOUND); addAction(BluetoothDevice.ACTION_UUID); addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED); addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED); addAction(BluetoothAdapter.ACTION_STATE_CHANGED) }
+        val filter = IntentFilter().apply { addAction(BluetoothDevice.ACTION_FOUND); addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED); addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED); addAction(BluetoothAdapter.ACTION_STATE_CHANGED) }
         if (Build.VERSION.SDK_INT >= 33) context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
         else context.registerReceiver(receiver, filter)
     }
@@ -140,13 +99,14 @@ class GameBluetoothModule(private val context: ReactApplicationContext) : ReactC
     @ReactMethod fun scan(promise: Promise) {
         searchHandler.post { try {
             adapter.cancelDiscovery()
-            searchHandler.removeCallbacks(serviceTimeout)
             searchHandler.removeCallbacks(searchTimeout)
-            candidates.clear(); seen.clear(); checking = null; inquiryStarted = false
+            inquiryStarted = false
             searching = true
-            adapter.bondedDevices.forEach { candidate(it) }
+            // Like 2.4: show paired devices immediately, then incoming discovery
+            // results. Device class is only a UI filter; no SDP probes or queues.
+            adapter.bondedDevices.forEach { emitDevice(it) }
             if (!adapter.startDiscovery()) throw IllegalStateException("Не удалось начать поиск. Проверьте Bluetooth и геолокацию в настройках телефона.")
-            searchHandler.postDelayed(searchTimeout, 60000)
+            searchHandler.postDelayed(searchTimeout, 30000)
             promise.resolve(null)
         } catch (e: Exception) { finishSearch(); promise.reject("BLUETOOTH", e.message) } }
     }
@@ -220,9 +180,8 @@ class GameBluetoothModule(private val context: ReactApplicationContext) : ReactC
         generation++
         searching = false
         searchHandler.post {
-            searchHandler.removeCallbacks(serviceTimeout)
             searchHandler.removeCallbacks(searchTimeout)
-            candidates.clear(); seen.clear(); checking = null; inquiryStarted = false
+            inquiryStarted = false
         }
         try { adapter?.cancelDiscovery() } catch (_: Exception) {}
         try { server?.close() } catch (_: Exception) {}; server = null

@@ -4,6 +4,24 @@ const { newGameState } = require('../src/game/state');
 const { publicStateFor } = require('../src/game/public-state');
 const { registerSocketHandlers } = require('../src/socket/handlers');
 const { canAttack, canDefend, canTransfer, hasUndefended } = require('../src/game/rules');
+const BOT_NAMES = [
+  'Мира',
+  'Лев',
+  'Ася',
+  'Макс',
+  'Соня',
+  'Тимур',
+  'Лис',
+  'Ника',
+  'Рома',
+  'Алиса',
+  'Марк',
+  'Вера',
+  'Костя',
+  'Яна',
+  'Феликс',
+  'Злата'
+];
 
 function playableIndexes(room, index) {
   if (room.game.status !== 'playing') return [];
@@ -35,6 +53,7 @@ function createLocalGame({
   let botTimer;
   let connect;
   const sockets = new Map();
+  const availableNames = BOT_NAMES.filter((value) => value !== name);
   const room = {
     code: 'LOCAL',
     mode,
@@ -45,7 +64,10 @@ function createLocalGame({
     players: Array.from({ length: maxPlayers }, (_, index) => ({
       userId: `local-${index}`,
       socketId: `local-${index}`,
-      name: index ? ['Мира', 'Лев', 'Ася'][index - 1] : name,
+      name: index
+        ? availableNames.splice(Math.floor(random() * availableNames.length), 1)[0]
+        : name,
+      isBot: index > 0,
       hand: []
     }))
   };
@@ -87,15 +109,35 @@ function createLocalGame({
     sockets.set(socket.id, socket);
     connect(socket);
   }
+  function waitsForHumanBito() {
+    const human = room.players[0];
+    return (
+      room.game.status === 'playing' &&
+      !human.surrendered &&
+      (human.hand.length > 0 || room.game.deck.length > 0) &&
+      room.game.table.length > 0 &&
+      !hasUndefended(room)
+    );
+  }
+  function humanCanConfirmDefense() {
+    return (
+      waitsForHumanBito() &&
+      room.game.defenderIndex === 0 &&
+      playableIndexes(room, room.game.attackerIndex).length === 0
+    );
+  }
   function snapshot(index = 0, action = null) {
+    const state = publicStateFor(room, index, action);
     return {
-      ...publicStateFor(room, index, action),
+      ...state,
+      canPass: state.canPass || (index === 0 && humanCanConfirmDefense()),
       playableCardIndexes: playableIndexes(room, index),
       local: true
     };
   }
   function publish(_room, action = null) {
     if (disposed) return;
+    if (waitsForHumanBito()) engine.clearTurnTimer(room);
     onState?.(snapshot(0, action));
     cancel(botTimer);
     if (room.game.status === 'playing' || room.game.status === 'timeout')
@@ -129,11 +171,16 @@ function createLocalGame({
     if (attacker === 0) return;
     const playable = playableIndexes(room, attacker);
     if (playable.length) send(attacker, 'playCard', playable[0]);
-    else if (snapshot(attacker).canPass) send(attacker, 'bito');
+    else if (!waitsForHumanBito() && snapshot(attacker).canPass) send(attacker, 'bito');
   }
   engine.startGame(room);
   return {
-    send: (event, payload) => send(0, event, payload),
+    send: (event, payload) =>
+      send(
+        event === 'bito' && humanCanConfirmDefense() ? room.game.attackerIndex : 0,
+        event,
+        payload
+      ),
     snapshot,
     rename(value) {
       if (disposed) return;

@@ -53,6 +53,9 @@ cloudflared tunnel --url http://localhost:3000
 
 ## Для разработчиков
 
+Постоянный адрес: **https://game.durakcards.uk**. Запуск на этом ПК:
+`start-domain.bat`. [Настройка домена и работа сервера](docs/domain.md).
+
 Android-проект находится в `android/`. Откройте его в Android Studio.
 [Сборка приложения и подключение по Wi-Fi](android/README.md).
 Приложение на React Native имеет собственный интерфейс и встроенную игру с ботами:

@@ -21,7 +21,8 @@ function createRoomService(
   {
     setTimeout = globalThis.setTimeout,
     clearTimeout = globalThis.clearTimeout,
-    random = Math.random
+    random = Math.random,
+    onPlayerState = () => {}
   } = {}
 ) {
   const rooms = new Map();
@@ -63,8 +64,9 @@ function createRoomService(
 
   function sendGameState(room, lastAction = null) {
     room.players.forEach((player, index) => {
-      if (!player.socketId) return;
       const state = publicStateFor(room, index, lastAction);
+      if (state) onPlayerState(player.userId, state);
+      if (!player.socketId) return;
       if (state) io.to(player.socketId).emit('updateState', state);
     });
   }
@@ -196,6 +198,15 @@ function createRoomService(
       return socket.emit('roomError', 'Вы уже вошли в эту комнату.');
     }
     if (socket.data.roomCode && socket.data.roomCode !== requestedCode) {
+      const current = rooms.get(socket.data.roomCode);
+      const me = current?.players.find((p) => p.socketId === socket.id);
+      if (
+        current &&
+        me &&
+        !['waiting', 'finished'].includes(current.game.status) &&
+        !me.surrendered
+      )
+        return socket.emit('roomError', 'Сначала нажмите «Сдаться», затем можно выйти.');
       leaveCurrentRoom(socket, 'switch');
     }
 

@@ -161,7 +161,7 @@ function canSurrender(room, index) {
     !player.surrendered &&
     (room.game.deck.length > 0 || player.hand.length > 0) &&
     room.players.filter((p) => !p.surrendered && (room.game.deck.length > 0 || p.hand.length > 0))
-      .length > 2
+      .length >= 2
   );
 }
 

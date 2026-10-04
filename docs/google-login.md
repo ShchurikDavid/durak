@@ -9,7 +9,7 @@ nonce, связанный с сессией браузера. Пароль Googl
 1. В [Google Cloud Console](https://console.cloud.google.com/) создайте или выберите проект.
 2. Настройте Google Auth Platform: Branding, Audience и OAuth client типа **Web application**.
 3. В **Authorized JavaScript origins** добавьте точный адрес сайта, например
-   `http://localhost:3000` для локальной проверки и `https://ваш-домен` для сайта.
+   `http://localhost:3000` для локальной проверки и `https://game.durakcards.uk` для сайта.
    Путь после домена не указывается. Для этого варианта с JavaScript callback
    redirect URI и client secret не нужны.
 4. Если проект находится в режиме Testing, добавьте нужные Google-аккаунты в Test users.

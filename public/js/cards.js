@@ -51,6 +51,7 @@ function cardBack() {
 function makeCardImg(code, alt, cls) {
   const img = document.createElement('img');
   img.className = cls || 'card';
+  img.dataset.code = code;
   img.alt = alt || String(code || '');
   img.draggable = false;
   img.loading = 'eager';

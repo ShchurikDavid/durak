@@ -45,6 +45,7 @@ async function request(action, body) {
 }
 function updateUser(user, name) {
   setAccount(user);
+  window.dispatchEvent(new CustomEvent('accountChanged', { detail: user }));
   if (!user && name) localStorage.setItem('durak_name', name);
   $('settingsName').value = getName();
   $('accountStatus').textContent = user

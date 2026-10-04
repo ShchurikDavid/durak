@@ -1,7 +1,10 @@
 const { DEFAULT_MODE } = require('../config');
+let matchSequence = 0;
 
 function newGameState() {
   return {
+    matchId: `${Date.now().toString(36)}-${(++matchSequence).toString(36)}-${Math.random().toString(36).slice(2)}`,
+    finishedAt: null,
     status: 'waiting',
     timeoutVotes: [],
     resumeVotes: [],
