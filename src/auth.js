@@ -21,7 +21,9 @@ function createAuth({
   databasePath = process.env.DATABASE_PATH || path.join(__dirname, '../data/durak.sqlite'),
   googleClientId = process.env.GOOGLE_CLIENT_ID || '',
   verifyGoogleToken,
-  onSessionRevoked = () => {}
+  onSessionRevoked = () => {},
+  passwordConcurrency = 4,
+  derivePassword = derive
 } = {}) {
   if (databasePath !== ':memory:') mkdirSync(path.dirname(databasePath), { recursive: true });
   const db = new DatabaseSync(databasePath);
@@ -103,6 +105,7 @@ function createAuth({
   }
   const publicUser = (s) => (s?.user_id ? { id: s.user_id, login: s.login, name: s.name } : null);
   const attempts = new Map();
+  let passwordJobs = 0;
   const requests = new Map();
   let requestWindow = Date.now();
   let requestCount = 0;
@@ -212,10 +215,20 @@ function createAuth({
     });
     for (const action of ['register', 'login'])
       app.post(`/api/auth/${action}`, async (req, res, next) => {
+        let acquired = false;
         try {
           const now = Date.now();
           for (const [key, value] of attempts) if (value.until < now) attempts.delete(key);
           const key = req.ip;
+          if (
+            (!attempts.has(key) && attempts.size >= 10000) ||
+            passwordJobs >= passwordConcurrency
+          ) {
+            res.setHeader('Retry-After', '5');
+            return res
+              .status(429)
+              .json({ error: 'Сервер занят. Попробуйте через несколько секунд.' });
+          }
           const attempt = attempts.get(key) || { count: 0, until: now + 15 * 60 * 1000 };
           attempts.set(key, attempt);
           if (++attempt.count > 20)
@@ -238,6 +251,8 @@ function createAuth({
             return res
               .status(400)
               .json({ error: 'Введите корректную почту и пароль от 8 до 128 символов.' });
+          passwordJobs++;
+          acquired = true;
           let user = db.prepare('SELECT * FROM users WHERE login=?').get(normalized);
           if (action === 'register') {
             if (
@@ -249,7 +264,7 @@ function createAuth({
               return res.status(400).json({ error: 'Введите ник от 1 до 20 символов.' });
             if (user) return res.status(409).json({ error: 'Эта почта уже зарегистрирована.' });
             const salt = randomBytes(16).toString('hex');
-            const passwordHash = (await derive(password, salt, 64)).toString('hex');
+            const passwordHash = (await derivePassword(password, salt, 64)).toString('hex');
             user = { id: randomUUID(), login: normalized, name: name.trim() };
             try {
               db.prepare('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)').run(
@@ -266,7 +281,7 @@ function createAuth({
               throw error;
             }
           } else {
-            const candidate = await derive(password, user?.salt || 'missing-user-salt', 64);
+            const candidate = await derivePassword(password, user?.salt || 'missing-user-salt', 64);
             if (!user || !timingSafeEqual(candidate, Buffer.from(user.password_hash, 'hex')))
               return res.status(401).json({ error: 'Неверная почта или пароль.' });
           }
@@ -276,12 +291,15 @@ function createAuth({
             .json({ user: { id: user.id, login: user.login, name: user.name } });
         } catch (error) {
           next(error);
+        } finally {
+          if (acquired) passwordJobs--;
         }
       });
     app.post('/api/auth/logout', (req, res) => {
       issue(req, res);
       res.json({ user: null });
     });
+    require('./friends').installFriends(app, { db, lookup });
     installGoogleAuth(app, {
       db,
       lookup,
@@ -293,11 +311,13 @@ function createAuth({
       res.status(404).json({ error: 'Этот способ входа недоступен. Обновите страницу.' });
     });
     app.use('/api/auth', (error, req, res, next) => {
-      res.status(error.status === 400 ? 400 : 500).json({
+      res.status(error.status === 413 ? 413 : error.status === 400 ? 400 : 500).json({
         error:
-          error.status === 400
-            ? 'Некорректный запрос.'
-            : 'Не удалось выполнить запрос. Попробуйте снова.'
+          error.status === 413
+            ? 'Запрос слишком большой.'
+            : error.status === 400
+              ? 'Некорректный запрос.'
+              : 'Не удалось выполнить запрос. Попробуйте снова.'
       });
     });
   }

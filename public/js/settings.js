@@ -1,3 +1,5 @@
+import { session } from './core/session.js';
+import { render } from './ui/game.js';
 import { $ } from './core/dom.js';
 import { getName } from './core/identity.js';
 const bgMusic = $('bgMusic');
@@ -37,6 +39,7 @@ function updateMusicButtons() {
   $('settingsSounds').setAttribute('aria-pressed', String(soundsOn));
   if ($('musicVolume')) $('musicVolume').value = musicVolume;
   if ($('soundVolume')) $('soundVolume').value = soundVolume;
+  if ($('soundVolumeValue')) $('soundVolumeValue').textContent = soundVolume + '%';
   if ($('musicVolumeValue')) $('musicVolumeValue').textContent = musicVolume + '%';
 }
 function ensureAudio() {
@@ -101,6 +104,11 @@ async function toggleMusic() {
   }
 }
 export function initSettings() {
+  $('handSort').value = localStorage.getItem('durak.sort') || 'suit';
+  $('handSort').onchange = () => {
+    localStorage.setItem('durak.sort', $('handSort').value);
+    if (session.currentState) render(session.currentState);
+  };
   applyTheme();
   updateMusicButtons();
   $('music').addEventListener('click', () => {
@@ -127,7 +135,9 @@ export function initSettings() {
     updateMusicButtons();
   }
   $('openSettings').onclick = openSettings;
+  $('clubSettings').onclick = openSettings;
   $('gameSettings').onclick = openSettings;
+  $('settingsDismiss').onclick = () => $('settingsBackdrop').classList.add('hidden');
   $('closeSettings').onclick = () => $('settingsBackdrop').classList.add('hidden');
   $('settingsBackdrop').addEventListener('click', (e) => {
     if (e.target === $('settingsBackdrop')) $('settingsBackdrop').classList.add('hidden');

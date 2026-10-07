@@ -139,7 +139,7 @@ function highlightPlayableCards(state) {
   if (tableIsEmpty) return;
 
   myCards.forEach((card, index) => {
-    const img = cards[index];
+    const img = cards.find((image) => image.dataset.code === card.code);
     if (!img) return;
     const playable = session.transferMode
       ? state.transferCardIndexes?.includes(index)

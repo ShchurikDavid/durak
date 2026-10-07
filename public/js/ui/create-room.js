@@ -39,6 +39,7 @@ export function initCreateRoomDialog() {
     submit.disabled = true;
     submit.textContent = 'Создаём…';
     socket.emit('createRoom', {
+      name: data.get('roomName'),
       mode: data.get('gameMode'),
       maxPlayers: Number(data.get('maxPlayers')),
       gameType: data.get('gameType')

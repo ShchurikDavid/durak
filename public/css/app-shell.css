@@ -459,7 +459,8 @@ body {
     max-width: 1800px;
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(280px, 1fr) auto;
+    grid-template-rows: repeat(5, max-content);
+    align-content: start;
     grid-template-areas:
       'header header'
       'toolbar toolbar'
@@ -493,12 +494,14 @@ body {
   }
   #lobby .rooms-panel {
     grid-area: rooms;
-    align-self: stretch;
+    align-self: start;
+    min-height: 280px;
+    overflow-y: auto;
     padding: 24px;
   }
   .hero-copy {
     min-height: 340px;
-    flex: 1;
+    flex: 0 0 auto;
   }
   .hero-copy h1 {
     font-size: clamp(44px, 4.2vw, 76px);
@@ -634,7 +637,8 @@ body {
 /* Desktop masthead: brand, controls and account share the very first row. */
 @media (min-width: 1000px) {
   #lobby {
-    grid-template-rows: auto auto minmax(280px, 1fr) auto;
+    grid-template-rows: repeat(4, max-content);
+    align-content: start;
     grid-template-areas:
       'header toolbar'
       'play join'
@@ -689,5 +693,38 @@ body {
 @media (min-width: 760px) {
   #lobby .lobby-toolbar .app-nav {
     grid-template-columns: repeat(3, minmax(0, 180px)) 46px;
+  }
+}
+
+/* Independent columns keep browser zoom from stretching cards and room panels. */
+.lobby-side {
+  display: contents;
+}
+@media (min-width: 760px) {
+  #lobby {
+    grid-template-rows: repeat(4, max-content);
+    grid-template-areas: 'header header' 'toolbar toolbar' 'play side' 'footer footer';
+  }
+  #lobby .lobby-side {
+    grid-area: side;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-width: 0;
+  }
+  #lobby .play-panel {
+    align-self: start;
+  }
+  #lobby .rooms-panel {
+    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+@media (min-width: 1000px) {
+  #lobby {
+    grid-template-rows: repeat(3, max-content);
+    grid-template-areas: 'header toolbar' 'play side' 'footer footer';
   }
 }

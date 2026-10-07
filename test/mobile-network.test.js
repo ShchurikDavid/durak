@@ -188,3 +188,54 @@ test('leaving automatic connection cancels scheduled retries', async (t) => {
   await new Promise((resolve) => setTimeout(resolve, 60));
   assert.equal(attempts, 1);
 });
+
+test('native guest and account sessions survive a client restart; logout revokes the account token', async (t) => {
+  const app = createApplication({ databasePath: ':memory:' });
+  t.after(() => app.close());
+  app.server.listen(0, '127.0.0.1');
+  await once(app.server, 'listening');
+  const address = `http://127.0.0.1:${app.server.address().port}`;
+  const saved = new Map();
+  const store = {
+    get: async (key) => saved.get(key) || '',
+    set: async (key, value) => {
+      saved.set(key, value);
+    }
+  };
+  const make = () => {
+    const client = new NetworkGame(
+      address,
+      'Гость',
+      { state() {}, rooms() {}, connection() {}, profile() {}, error() {}, closed() {} },
+      5000,
+      store
+    );
+    t.after(() => client.dispose());
+    return client;
+  };
+  const first = make();
+  await first.request('me');
+  await first.request('name', { name: 'Сохранённый гость' });
+  const guestToken = saved.get(address);
+  first.dispose();
+  const second = make();
+  assert.equal((await second.request('me')).name, 'Сохранённый гость');
+  assert.equal(saved.get(address), guestToken);
+  const registered = await second.request('register', {
+    email: 'session@example.com',
+    password: 'test-password-123',
+    name: 'Сохранённый аккаунт'
+  });
+  const accountToken = saved.get(address);
+  assert.notEqual(accountToken, guestToken);
+  second.dispose();
+  const third = make();
+  assert.equal((await third.request('me')).user.id, registered.user.id);
+  await third.request('logout', {});
+  assert.notEqual(saved.get(address), accountToken);
+  third.dispose();
+  const fourth = make();
+  assert.equal((await fourth.request('me')).user, null);
+  const stale = await fetch(address + '/api/auth/history', { headers: { Cookie: accountToken } });
+  assert.equal(stale.status, 401);
+});

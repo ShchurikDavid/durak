@@ -148,6 +148,7 @@ function renderPlayersAroundTable(state) {
     const count = seat.querySelector('.mini-seat-count');
     const backs = seat.querySelector('.mini-seat-backs');
 
+    name.translate = !!player.isMe;
     name.textContent = player.isMe ? 'Вы' : player.name || `Игрок ${player.index + 1}`;
     const cards = Number(player.cardCount || 0);
     count.textContent = `${cards} ${pluralCards(cards)}`;

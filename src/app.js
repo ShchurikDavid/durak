@@ -14,6 +14,10 @@ function createApplication(options = {}) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data:; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+    );
     // Never serve server code, credentials, databases or build artifacts.
     if (
       /(?:^|\/)(?:\.[^/]+|data|src|deploy|artifacts|node_modules)(?:\/|$)|\.(?:sqlite(?:-wal|-shm)?|db|pem|key|env|map)$/i.test(
@@ -32,7 +36,12 @@ function createApplication(options = {}) {
     maxHttpBufferSize: 16 * 1024,
     allowRequest: (req, done) => {
       try {
-        done(null, !req.headers.origin || new URL(req.headers.origin).host === req.headers.host);
+        const origin = req.headers.origin ? new URL(req.headers.origin) : null;
+        done(
+          null,
+          !origin ||
+            (['http:', 'https:'].includes(origin.protocol) && origin.host === req.headers.host)
+        );
       } catch {
         done(null, false);
       }
@@ -98,7 +107,18 @@ function createApplication(options = {}) {
     });
     next();
   });
+  app.get('/vendor/motion.js', (_req, res) => {
+    res.sendFile(
+      path.resolve(path.dirname(require.resolve('motion/package.json')), 'dist/motion.js')
+    );
+  });
   app.use(express.static(path.join(__dirname, '../public')));
+  app.use((error, req, res, next) => {
+    const status = error.status === 413 ? 413 : error.status === 400 ? 400 : 500;
+    res
+      .status(status)
+      .json({ error: status === 413 ? 'Запрос слишком большой.' : 'Некорректный запрос.' });
+  });
   const service = createRoomService(io, { ...options, onPlayerState: auth.recordState });
   registerSocketHandlers(io, service);
   return {

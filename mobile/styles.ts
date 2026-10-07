@@ -1,23 +1,29 @@
 import { StyleSheet } from 'react-native';
 
 export const colors = {
-  bg: '#07100B',
-  panel: '#17281E',
-  line: '#42503A',
-  cream: '#F2EFDF',
-  muted: '#A6B3A5',
-  accent: '#F1C40F',
+  bg: '#061C14',
+  panel: '#103427',
+  line: '#28503C',
+  cream: '#F5F0DB',
+  muted: '#A1B5A5',
+  accent: '#F4D348',
   green: '#78C69C',
   red: '#A92732'
 };
 export const s = StyleSheet.create({
+  welcomeBenefit: {
+    gap: 6,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line
+  },
   historyModalWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
   historyModal: {
     width: '100%',
     maxWidth: 520,
     maxHeight: '90%',
     padding: 16,
-    borderRadius: 24,
+    borderRadius: 16,
     backgroundColor: colors.bg,
     borderWidth: 1,
     borderColor: colors.line
@@ -29,7 +35,7 @@ export const s = StyleSheet.create({
     width: '100%',
     maxWidth: 440,
     padding: 20,
-    borderRadius: 24,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.bg,
@@ -55,7 +61,7 @@ export const s = StyleSheet.create({
     maxWidth: 440,
     padding: 24,
     gap: 22,
-    borderRadius: 24,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#D4AF37',
     backgroundColor: colors.bg
@@ -88,6 +94,22 @@ export const s = StyleSheet.create({
     transform: [{ rotate: '-45deg' }]
   },
   root: { flex: 1, backgroundColor: colors.bg },
+  brandHeader: {
+    height: 56,
+    paddingHorizontal: 22,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    backgroundColor: colors.bg
+  },
+  accountPageShade: { backgroundColor: colors.bg, justifyContent: 'flex-start' },
+  accountPageSafe: { flex: 1, maxHeight: '100%' },
+  accountPageSheet: {
+    flex: 1,
+    borderWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    paddingBottom: 0
+  },
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   header: {
@@ -103,8 +125,14 @@ export const s = StyleSheet.create({
   caption: { fontSize: 12, lineHeight: 18, color: colors.muted },
   muted: { color: colors.muted, fontSize: 14, lineHeight: 22 },
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 2, color: colors.accent },
-  title: { fontSize: 27, fontWeight: '800', letterSpacing: -0.7, color: colors.cream },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.cream },
+  title: {
+    fontFamily: 'serif',
+    fontSize: 27,
+    fontWeight: '800',
+    letterSpacing: -0.7,
+    color: colors.cream
+  },
+  sectionTitle: { fontFamily: 'serif', fontSize: 17, fontWeight: '700', color: colors.cream },
   page: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 26, gap: 18 },
   profileCircle: {
     width: 46,
@@ -132,6 +160,7 @@ export const s = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.green },
   pillText: { color: colors.green, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
   heroTitle: {
+    fontFamily: 'serif',
     fontSize: 43,
     lineHeight: 48,
     fontWeight: '900',
@@ -151,7 +180,7 @@ export const s = StyleSheet.create({
   heroCardRight: { position: 'absolute', left: 56, top: 0, transform: [{ rotate: '13deg' }] },
   playTile: {
     backgroundColor: colors.accent,
-    borderRadius: 24,
+    borderRadius: 16,
     padding: 18,
     minHeight: 104,
     flexDirection: 'row',
@@ -172,7 +201,7 @@ export const s = StyleSheet.create({
   playArrow: { fontSize: 30, color: colors.bg },
   networkTile: {
     backgroundColor: colors.panel,
-    borderRadius: 22,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.line,
     padding: 18,
@@ -221,7 +250,7 @@ export const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     padding: 18,
-    borderRadius: 22,
+    borderRadius: 14,
     gap: 14
   },
   field: { gap: 8 },
@@ -391,7 +420,7 @@ export const s = StyleSheet.create({
   },
   table: {
     backgroundColor: '#145F44',
-    borderRadius: 24,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: '#D4AF37',
     padding: 10,
@@ -479,6 +508,6 @@ export const s = StyleSheet.create({
   hand: { gap: 8, alignItems: 'center' },
   handHint: { color: colors.muted, fontSize: 11, textAlign: 'center' },
   actions: { flexDirection: 'row', gap: 8, justifyContent: 'center', flexWrap: 'wrap' },
-  result: { backgroundColor: colors.panel, padding: 20, borderRadius: 22, gap: 12 },
+  result: { backgroundColor: colors.panel, padding: 20, borderRadius: 14, gap: 12 },
   warning: { color: colors.accent, padding: 12, textAlign: 'center', fontSize: 13 }
 });

@@ -1,3 +1,4 @@
+import { revealSurface } from './ui/motion.js';
 import { $, showToast } from './core/dom.js';
 import { getName, setAccount } from './core/identity.js';
 import { socket } from './core/socket.js';
@@ -48,17 +49,84 @@ function updateUser(user, name) {
   window.dispatchEvent(new CustomEvent('accountChanged', { detail: user }));
   if (!user && name) localStorage.setItem('durak_name', name);
   $('settingsName').value = getName();
-  $('accountStatus').textContent = user
-    ? `Вы вошли как ${user.name}`
-    : getName()
-      ? `Гость: ${getName()}`
-      : 'Играйте гостем или создайте аккаунт';
+  const status = $('accountStatus');
+  const prefix = document.createElement('span');
+  prefix.textContent = user ? 'Вы вошли как' : 'Гость:';
+  const playerName = document.createElement('span');
+  playerName.translate = false;
+  playerName.textContent = user?.name || name || getName();
+  status.replaceChildren(prefix, document.createTextNode(' '), playerName);
   $('openAuth').classList.toggle('hidden', !!user);
   $('logoutAccount').classList.toggle('hidden', !user);
 }
 export async function initAuth() {
   let mode = 'login';
   let busy = false;
+  const welcome = $('welcomeDialog');
+  let finishWelcome;
+  let firstVisit = false;
+  function route(screen, replace = false) {
+    const url = new URL(location.href);
+    url.hash = screen;
+    history[replace ? 'replaceState' : 'pushState'](null, '', url);
+    document.body.classList.toggle('account-page-open', !!screen);
+  }
+  function leaveAccount() {
+    closeAccount();
+    if (!firstVisit) route('', true);
+  }
+  function updatePageAccess() {
+    const active = !welcome.hidden || !dialog.hidden;
+    document.body.classList.toggle('account-page-open', active);
+    for (const element of document.body.children) {
+      if (element !== welcome && element !== dialog) element.inert = active;
+    }
+  }
+  function showPage(page) {
+    welcome.hidden = page !== welcome;
+    dialog.hidden = page !== dialog;
+    updatePageAccess();
+    const title = page.querySelector('h2');
+    title.tabIndex = -1;
+    title.focus({ preventScroll: true });
+  }
+  function closeAccount() {
+    dialog.hidden = true;
+    hidePassword();
+    $('authPassword').value = '';
+    $('authConfirm').value = '';
+    if (firstVisit) showWelcome();
+    else updatePageAccess();
+  }
+  function completeWelcome() {
+    firstVisit = false;
+    try {
+      localStorage.setItem('durak.welcome.v1', 'done');
+    } catch {
+      /* Private storage may be unavailable. */
+    }
+    welcome.hidden = true;
+    route('', true);
+    updatePageAccess();
+    finishWelcome?.();
+  }
+  function showWelcome() {
+    route('welcome', true);
+    showPage(welcome);
+    revealSurface(welcome.querySelector('.account-page-content'));
+  }
+  function openAccount(value) {
+    welcome.hidden = true;
+    setMode(value);
+    if (location.hash !== `#${value}`) route(value);
+    else document.body.classList.add('account-page-open');
+    showPage(dialog);
+    revealSurface($('authForm'));
+    setupGoogle();
+  }
+  $('welcomeRegister').onclick = () => openAccount('register');
+  $('welcomeLogin').onclick = () => openAccount('login');
+  $('welcomeGuest').onclick = completeWelcome;
   const dialog = $('authDialog');
   function hidePassword() {
     $('authPassword').type = 'password';
@@ -73,7 +141,6 @@ export async function initAuth() {
     $('togglePassword').title = show ? 'Скрыть пароль' : 'Показать пароль';
     $('togglePassword').setAttribute('aria-pressed', String(show));
   };
-  dialog.addEventListener('close', hidePassword);
   async function setupGoogle() {
     $('googleSignIn').replaceChildren();
     if (navigator.userAgent.includes('DurakAndroid/')) {
@@ -89,13 +156,13 @@ export async function initAuth() {
         return;
       }
       await loadGoogle();
-      if (!dialog.open) return;
+      if (dialog.hidden) return;
       window.google.accounts.id.initialize({
         client_id: config.clientId,
         nonce: config.nonce,
         auto_select: false,
         callback: async ({ credential }) => {
-          if (busy || !dialog.open) return;
+          if (busy || dialog.hidden) return;
           if (session.currentState) {
             $('authError').textContent = 'Сначала выйдите из комнаты.';
             return;
@@ -106,8 +173,9 @@ export async function initAuth() {
           try {
             const data = await request('google', { credential });
             updateUser(data.user);
+            completeWelcome();
             $('authPassword').value = '';
-            dialog.close();
+            closeAccount();
             socket.disconnect().connect();
             showToast('Вы вошли через Google');
           } catch (error) {
@@ -133,6 +201,9 @@ export async function initAuth() {
   function setMode(value) {
     hidePassword();
     mode = value;
+    $('authConfirm').value = '';
+    $('authConfirm').required = mode === 'register';
+    $('authConfirmLabel').classList.toggle('hidden', mode !== 'register');
     $('authTitle').textContent = mode === 'login' ? 'Вход в аккаунт' : 'Создание аккаунта';
     $('authSubmit').textContent = mode === 'login' ? 'Войти' : 'Создать аккаунт';
     $('authSwitch').textContent = mode === 'login' ? 'Создать аккаунт' : 'Уже есть аккаунт? Войти';
@@ -148,22 +219,32 @@ export async function initAuth() {
     $('authError').textContent = '';
   }
   $('openAuth').onclick = () => {
-    setMode('login');
-    dialog.showModal();
-    setupGoogle();
+    openAccount('login');
   };
   $('authSwitch').onclick = () => {
-    if (!busy) setMode(mode === 'login' ? 'register' : 'login');
+    if (!busy) {
+      setMode(mode === 'login' ? 'register' : 'login');
+      route(mode);
+    }
   };
   $('cancelAuth').onclick = () => {
-    if (!busy) dialog.close();
+    if (!busy) leaveAccount();
   };
-  dialog.addEventListener('cancel', (event) => {
-    if (busy) event.preventDefault();
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || (welcome.hidden && dialog.hidden)) return;
+    event.preventDefault();
+    if (busy) return;
+    if (!dialog.hidden) leaveAccount();
+    else completeWelcome();
   });
   $('authForm').onsubmit = async (event) => {
     event.preventDefault();
     if (busy) return;
+    if (mode === 'register' && $('authPassword').value !== $('authConfirm').value) {
+      $('authError').textContent = 'Пароли не совпадают.';
+      $('authConfirm').focus();
+      return;
+    }
     if (session.currentState) {
       $('authError').textContent = 'Сначала выйдите из комнаты.';
       return;
@@ -178,8 +259,9 @@ export async function initAuth() {
         name: $('authName').value.trim()
       });
       updateUser(data.user);
+      completeWelcome();
       $('authPassword').value = '';
-      dialog.close();
+      closeAccount();
       socket.disconnect().connect();
       showToast(mode === 'register' ? 'Аккаунт создан!' : 'Вы вошли в аккаунт');
     } catch (error) {
@@ -222,6 +304,19 @@ export async function initAuth() {
       $('saveSettingsName').disabled = false;
     }
   };
+  window.addEventListener('popstate', () => {
+    if (busy) return route(mode, true);
+    const screen = location.hash.slice(1);
+    if (screen === 'login' || screen === 'register') openAccount(screen);
+    else if (screen === 'welcome') {
+      closeAccount();
+      showWelcome();
+    } else {
+      welcome.hidden = true;
+      leaveAccount();
+      updatePageAccess();
+    }
+  });
   socket.on('profileUpdated', (data) => updateUser(data.user, data.name));
   socket.on('authExpired', () =>
     showToast('Сессия завершилась. Обновите страницу для продолжения.')
@@ -229,6 +324,24 @@ export async function initAuth() {
   try {
     const data = await request('me');
     updateUser(data.user, data.name);
+    let seen = false;
+    try {
+      seen = localStorage.getItem('durak.welcome.v1') === 'done';
+    } catch {
+      /* Still offer guest access. */
+    }
+    if (data.user) completeWelcome();
+    else if (!seen) {
+      firstVisit = true;
+      await new Promise((resolve) => {
+        finishWelcome = resolve;
+        const screen = location.hash.slice(1);
+        if (screen === 'login' || screen === 'register') openAccount(screen);
+        else showWelcome();
+      });
+    }
+    if (['login', 'register'].includes(location.hash.slice(1))) openAccount(location.hash.slice(1));
+    else if (location.hash === '#welcome') showWelcome();
     return true;
   } catch {
     showToast('Не удалось подключиться. Обновите страницу, чтобы повторить попытку.');

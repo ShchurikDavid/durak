@@ -1,3 +1,4 @@
+import { orderedHand } from '../hand-order.js';
 import { renderTimeout, initTimeoutControls } from './timeout.js';
 import { highlightPlayableCards } from './highlights.js';
 import { $ } from '../core/dom.js';
@@ -18,7 +19,7 @@ function render(state) {
   $('status').textContent = state.statusText || 'Ожидание...';
   $('deckCount').textContent = state.deckCount;
   $('roomBadge').textContent =
-    `Комната ${state.roomCode} · ${state.playersConnected}/${state.maxPlayers || state.playersTotal || 2} · ${state.gameModeLabel || '36 карт'} · ${state.gameTypeLabel || 'Подкидной'}`;
+    `${state.roomName || 'Комната'} ${state.roomCode} · ${state.playersConnected}/${state.maxPlayers || state.playersTotal || 2} · ${state.gameModeLabel || '36 карт'} · ${state.gameTypeLabel || 'Подкидной'}`;
   $('transfer').classList.toggle('hidden', state.gameType !== 'transfer');
   $('transfer').disabled = !state.canTransfer || session.actionPending;
   $('transfer').textContent = session.transferMode ? 'Отмена перевода' : 'Перевести';
@@ -106,7 +107,12 @@ function renderHand(state) {
   const existing = new Map(
     [...el.querySelectorAll('img.card')].map((img) => [img.dataset.code, img])
   );
-  const cards = state.myHand || [];
+  const entries = orderedHand(
+    state.myHand || [],
+    localStorage.getItem('durak.sort') || 'suit',
+    state.trumpCard?.suit
+  );
+  const cards = entries.map(({ card }) => card);
   const keep = new Set(cards.map((card) => card.code));
   for (const [code, img] of existing) {
     if (!keep.has(code) || img.dataset.skin !== cardBack()) {
@@ -125,6 +131,7 @@ function renderHand(state) {
       (el.clientWidth || window.innerWidth) - 12;
   el.classList.toggle('scroll', !fits);
   cards.forEach((card, index) => {
+    const originalIndex = entries[index].index;
     const img = existing.get(card.code) || makeCardImg(card.code, `${card.val}${card.suit}`);
     img.dataset.skin = cardBack();
     const item = img.closest('.durak-card-filter') || img;
@@ -142,9 +149,9 @@ function renderHand(state) {
         session.currentState?.status === 'playing' &&
         !session.actionPending
       ) {
-        if (session.transferMode && !state.transferCardIndexes?.includes(index)) return;
+        if (session.transferMode && !state.transferCardIndexes?.includes(originalIndex)) return;
         session.actionPending = true;
-        socket.emit(session.transferMode ? 'transferCard' : 'playCard', index);
+        socket.emit(session.transferMode ? 'transferCard' : 'playCard', originalIndex);
       }
     };
     if (el.children[index] !== item) el.insertBefore(item, el.children[index] || null);

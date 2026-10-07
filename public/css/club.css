@@ -1,0 +1,686 @@
+/* Club styling, inspired by the supplied videos. Card assets and game geometry stay intact. */
+:root {
+  --app-bg: #061c14;
+  --app-panel: #103427;
+  --app-line: #28503c;
+  --app-text: #f5f0db;
+  --app-muted: #a1b5a5;
+  --app-accent: #f4d348;
+}
+body {
+  background: radial-gradient(ellipse at 45% 0%, #123d2b 0%, #061c14 65%);
+}
+#lobby {
+  background: transparent;
+}
+#lobby .hero-copy h1,
+.section-heading h2,
+dialog h2,
+.account-page h1,
+.settings-panel h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+#lobby .hero-copy h1 {
+  line-height: 1.05;
+}
+#lobby .hero-copy h1 em {
+  color: var(--app-accent);
+  font-weight: 500;
+}
+#lobby .eyebrow {
+  border: 0;
+  padding-left: 0;
+  color: var(--app-accent);
+  letter-spacing: 2px;
+}
+#lobby .panel:not(.play-panel),
+.create-room-dialog,
+.settings-panel,
+.skins-panel {
+  background: linear-gradient(135deg, #153b2c, #0c291f);
+  border: 1px solid var(--app-line);
+  border-radius: 16px;
+  box-shadow: 0 16px 50px #0002;
+}
+#lobby .btn,
+#lobby .account-button {
+  border-radius: 12px;
+}
+#lobby .room-create {
+  background: linear-gradient(110deg, #f5db59, #efd03c);
+  box-shadow: 0 4px 24px #f4d34812;
+}
+#lobby .room-share {
+  min-height: 48px;
+}
+#lobby .play-tile-icon {
+  background: #18392318;
+  border-radius: 50%;
+}
+#lobby .app-nav .btn {
+  background: #163c2b;
+  border: 1px solid #ffffff08;
+}
+#lobby .logo {
+  letter-spacing: 2px;
+}
+#lobby .room {
+  background: #173e2d;
+  border: 1px solid #284b38;
+  border-radius: 12px;
+  margin: 10px 0;
+  padding: 16px;
+}
+#lobby .room-code {
+  font-size: 17px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+#lobby .room .primary {
+  background: #26543c;
+  color: var(--app-text);
+  border: 1px solid #3b6549;
+}
+.account-page {
+  background: radial-gradient(ellipse at top, #16452e, #061c14 75%);
+}
+.account-page .account-page-card {
+  border-color: var(--app-line);
+  background: #103427;
+}
+input,
+select {
+  color: var(--app-text);
+  background: #08271c;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  padding: 12px;
+  font: inherit;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+select {
+  min-height: 44px;
+}
+#roomName {
+  width: 100%;
+  margin: 8px 0 20px;
+}
+#friendsDialog {
+  width: min(520px, calc(100% - 28px));
+  max-height: 85dvh;
+  overflow: auto;
+  color: var(--app-text);
+  padding: 24px;
+}
+.friend-code {
+  padding: 12px 0;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+  user-select: all;
+  color: var(--app-accent);
+}
+#friendForm {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+.friend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid var(--app-line);
+  padding: 16px 0;
+}
+.friend-row strong {
+  flex: 1 1 60%;
+  overflow-wrap: anywhere;
+}
+.friend-row small {
+  color: var(--app-muted);
+}
+.friend-row .btn {
+  padding: 8px 14px;
+}
+.setting-row {
+  gap: 14px;
+  flex-wrap: wrap;
+}
+@media (min-width: 981px) {
+  #lobby .hero-copy h1 {
+    max-width: 70%;
+  }
+}
+@media (max-width: 980px) {
+  #lobby .hero-copy h1 {
+    font-size: clamp(40px, 7vw, 64px);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  button {
+    transition:
+      background-color 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+  button:hover {
+    box-shadow: 0 0 0 1px #f4d34844;
+  }
+}
+
+.account-page h2 {
+  font-family: Georgia, serif;
+  font-weight: 700;
+}
+.account-language {
+  position: absolute;
+  left: 22px;
+  top: 16px;
+  max-width: 145px;
+  z-index: 101;
+}
+
+/* The reference layout: create/join on the left, open tables on the right. */
+#lobby .app-nav {
+  background: transparent;
+}
+.club-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.club-mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--app-accent);
+  color: #082218;
+  font-size: 27px;
+  transform: rotate(-5deg);
+}
+.club-tagline {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--app-muted);
+  margin-top: 5px;
+}
+#lobby .logo {
+  font-family: Georgia, serif;
+  letter-spacing: 0;
+  font-size: 26px;
+}
+#lobby .join-panel {
+  margin: 0;
+  padding: 16px;
+}
+#lobby .join-panel h2 {
+  font:
+    700 13px/1.4 Arial,
+    sans-serif;
+  letter-spacing: 0;
+}
+#lobby .join-panel .section-heading {
+  margin-bottom: 10px;
+}
+#lobby .join-panel .section-heading > span {
+  display: none;
+}
+#lobby #joinByCode {
+  background: #24513a;
+  color: var(--app-text);
+}
+#lobby #shareLobby {
+  background: transparent;
+  border: 0;
+  justify-content: flex-start;
+  text-align: left;
+  color: var(--app-muted);
+  font-size: 12px;
+  padding-left: 0;
+}
+#lobby #openFriends {
+  background: transparent;
+  min-height: 38px;
+  border: 0;
+  color: var(--app-accent);
+}
+#lobby .rooms-panel {
+  min-height: 380px;
+}
+#lobby .room {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 18px 0;
+  gap: 12px;
+}
+.room-avatar {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  background: #b2cbbd;
+  color: #0b261b;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  font-weight: 800;
+}
+.room:nth-child(3n + 2) .room-avatar {
+  background: #e4cc75;
+}
+.room:nth-child(3n + 3) .room-avatar {
+  background: #d9b39c;
+}
+.room-details {
+  flex: 1;
+  min-width: 0;
+}
+.room-host {
+  color: var(--app-muted);
+  font-size: 12px;
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+.club-room-hint {
+  font-size: 12px;
+  color: var(--app-muted);
+  margin: 4px 0 20px;
+}
+.room-filters {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--app-line);
+}
+.room-filters button {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  color: var(--app-muted);
+  padding: 12px 0;
+  min-height: 44px;
+  font-weight: 600;
+}
+.room-filters button[aria-pressed='true'] {
+  color: var(--app-text);
+  border-bottom: 2px solid var(--app-accent);
+}
+.club-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: #103024;
+  border: 1px solid var(--app-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+#lobby .club-shortcuts button {
+  border: 0;
+  border-right: 1px solid var(--app-line);
+  border-radius: 0;
+  background: transparent;
+  min-height: 84px;
+  color: var(--app-text);
+  font-size: 14px;
+  padding: 16px;
+}
+#lobby .lobby-footer {
+  margin-top: 0;
+}
+@media (min-width: 981px) {
+  #lobby {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas: 'header toolbar' 'play side' 'shortcuts shortcuts' 'footer footer';
+    column-gap: 32px;
+    row-gap: 24px;
+  }
+  #lobby .app-header {
+    grid-area: header;
+  }
+  #lobby .lobby-toolbar {
+    grid-area: toolbar;
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin: 0;
+  }
+  #lobby .app-nav {
+    display: flex;
+    gap: 8px;
+  }
+  #lobby .app-nav .btn {
+    width: auto;
+    min-width: 44px;
+    font-size: 12px;
+    padding: 10px;
+  }
+  #lobby #openSkins {
+    display: none;
+  }
+  #lobby #openSettings span {
+    display: none;
+  }
+  #lobby .account-panel {
+    max-width: none;
+  }
+  #lobby .play-panel {
+    grid-area: play;
+    margin-top: 16px;
+  }
+  #lobby .lobby-side {
+    grid-area: side;
+    display: flex;
+    margin-top: 40px;
+  }
+  #lobby .rooms-panel {
+    flex: 1;
+    align-self: stretch;
+  }
+  #lobby .club-shortcuts {
+    grid-area: shortcuts;
+  }
+  #lobby .hero-copy {
+    min-height: 340px;
+  }
+  #lobby .hero-copy h1 {
+    font-size: clamp(42px, 4.2vw, 76px);
+    max-width: 85%;
+  }
+  #lobby .hero-cards {
+    top: 150px;
+    right: 25px;
+    transform: scale(1.15);
+  }
+}
+@media (max-width: 980px) {
+  #lobby {
+    display: flex;
+    flex-direction: column;
+    width: min(640px, 100%);
+    padding: 18px 14px;
+    gap: 18px;
+  }
+  #lobby .app-header {
+    width: 100%;
+  }
+  #lobby .lobby-toolbar {
+    width: 100%;
+  }
+  #lobby .play-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #lobby .lobby-side {
+    display: contents;
+  }
+  #lobby .rooms-panel {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #lobby .hero-copy {
+    min-height: 330px;
+  }
+  #lobby .hero-cards {
+    top: 190px;
+    right: 14px;
+    transform: scale(0.9);
+  }
+  #lobby .hero-copy h1 {
+    font-size: clamp(40px, 8vw, 58px);
+    max-width: 100%;
+  }
+  #lobby .hero-copy p {
+    max-width: 60%;
+  }
+  #lobby .club-shortcuts {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+  #lobby .club-shortcuts button {
+    min-height: 56px;
+    border-right: 0;
+    border-bottom: 1px solid var(--app-line);
+  }
+}
+
+.settings-modal,
+.skin-modal,
+.result-modal {
+  background: linear-gradient(135deg, #153b2c, #0c291f);
+  color: var(--app-text);
+  border: 1px solid var(--app-line);
+  border-radius: 16px;
+}
+.settings-title,
+.skin-title,
+.result-title {
+  font-family: Georgia, serif;
+}
+.setting-range {
+  accent-color: var(--app-accent);
+}
+#lobby .section-heading h2 {
+  font-size: clamp(22px, 2vw, 32px);
+}
+#lobby .join-panel h2 {
+  font-size: 13px;
+}
+
+#lobby .room-filters button[aria-pressed] {
+  background: transparent !important;
+  color: var(--app-muted);
+  box-shadow: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+}
+#lobby .room-filters button[aria-pressed='true'] {
+  color: var(--app-text);
+  border-bottom-color: var(--app-accent);
+}
+#lobby .play-panel {
+  gap: 12px;
+}
+#lobby .room-create {
+  min-height: 84px;
+}
+#lobby .room .primary {
+  font-size: 12px;
+  min-width: 0;
+  padding: 10px;
+}
+#lobby .rooms-panel {
+  overflow: visible;
+}
+#lobby .lobby-side {
+  min-height: 0;
+}
+#lobby #roomList {
+  max-height: 520px;
+  overflow: auto;
+}
+
+@media (max-width: 980px) {
+  #lobby {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: repeat(6, max-content);
+    grid-template-areas: 'brand account' 'navigation navigation' 'play play' 'rooms rooms' 'shortcuts shortcuts' 'footer footer';
+    align-content: start;
+    column-gap: 10px;
+    row-gap: 18px;
+  }
+  #lobby .app-header {
+    display: flex;
+    grid-area: brand;
+    min-width: 0;
+    pointer-events: auto;
+  }
+  #lobby .lobby-toolbar,
+  #lobby .lobby-toolbar .account-panel {
+    display: contents;
+  }
+  #lobby .account-actions {
+    grid-area: account;
+    align-self: center;
+  }
+  #lobby #accountStatus {
+    display: none;
+  }
+  #lobby .app-tagline {
+    display: none;
+  }
+  #lobby .logo {
+    font-size: 23px;
+    letter-spacing: 0;
+  }
+  .club-mark {
+    width: 34px;
+    height: 36px;
+    font-size: 24px;
+    border-radius: 10px;
+  }
+  .club-brand {
+    gap: 8px;
+  }
+  .club-tagline {
+    font-size: 8px;
+    max-width: 110px;
+  }
+  #lobby .lobby-toolbar .app-nav {
+    display: flex;
+    grid-area: navigation;
+    gap: 8px;
+    justify-content: flex-start;
+    width: 100%;
+  }
+  #lobby .lobby-toolbar .app-nav .btn,
+  #lobby .lobby-toolbar .app-nav .lobby-patreon {
+    width: 44px;
+    min-width: 44px;
+    flex: 0 0 44px;
+    font-size: 0;
+  }
+  #lobby .lobby-toolbar .app-nav .btn span {
+    display: none;
+  }
+  #lobby .play-panel {
+    grid-area: play;
+  }
+  #lobby .hero-copy {
+    min-height: 290px;
+  }
+  #lobby .hero-cards {
+    position: absolute;
+    top: 160px;
+    bottom: auto;
+    right: 14px;
+    margin: 0;
+    transform: scale(0.9);
+    transform-origin: right top;
+  }
+  #lobby .rooms-panel {
+    grid-area: rooms;
+  }
+  #lobby .club-shortcuts {
+    grid-area: shortcuts;
+  }
+  #lobby .lobby-footer {
+    grid-area: footer;
+  }
+}
+@media (max-width: 360px) {
+  #lobby .hero-copy h1 {
+    font-size: 39px;
+  }
+  #lobby .account-button {
+    font-size: 10px;
+    padding: 7px;
+  }
+  .club-tagline {
+    max-width: 90px;
+  }
+}
+
+#lobby .room-filters button[aria-pressed] {
+  border-color: transparent !important;
+  color: var(--app-muted) !important;
+}
+#lobby .room-filters button[aria-pressed='true'] {
+  border-bottom-color: var(--app-accent) !important;
+  color: var(--app-text) !important;
+}
+.account-page.create-room-dialog {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding-top: 72px;
+  background: radial-gradient(ellipse at top, #16452e, #061c14 75%);
+}
+.account-page .password-toggle[aria-pressed] {
+  background: transparent !important;
+  border-color: var(--app-line) !important;
+  color: var(--app-text) !important;
+}
+@media (max-height: 640px) {
+  .account-page .account-form input {
+    min-height: 38px;
+    height: 38px;
+    padding: 7px 10px;
+  }
+  .account-page .btn {
+    padding: 7px 10px;
+  }
+  .account-page h2 {
+    font-size: 23px;
+    margin-bottom: 6px;
+  }
+}
+@media (max-width: 600px) {
+  #lobby .join-panel .create {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  #lobby .join-panel .create input {
+    width: 0;
+    flex: 1;
+    min-width: 0;
+  }
+  #lobby .join-panel .create .btn {
+    width: auto;
+    flex: 0 0 auto;
+    max-width: 46%;
+    font-size: 12px;
+  }
+  #lobby #openFriends,
+  #lobby #shareLobby {
+    margin: 0;
+    min-height: 38px;
+    padding: 8px 0;
+  }
+}
+@media (max-width: 360px) {
+  #lobby .hero-copy {
+    min-height: 310px;
+  }
+  #lobby .hero-cards {
+    top: 180px;
+  }
+  #lobby .join-panel .create .btn {
+    font-size: 10px;
+    padding-inline: 8px;
+  }
+}
+@media (max-width: 980px) {
+  #lobby .rooms-panel {
+    min-height: 320px;
+  }
+}

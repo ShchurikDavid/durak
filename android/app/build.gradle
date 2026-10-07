@@ -15,12 +15,16 @@ android {
         applicationId 'com.durak.game'
         minSdkVersion 26
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 14
-        versionName '3.231'
+        versionCode 19
+        versionName '3.3'
     }
     buildTypes {
         debug { }
-        release { minifyEnabled false }
+        release {
+            minifyEnabled false
+            debuggable false
+            signingConfig signingConfigs.debug
+        }
     }
 }
 dependencies {

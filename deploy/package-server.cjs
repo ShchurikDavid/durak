@@ -14,6 +14,7 @@ for (const name of ['src', 'public', 'server.js', 'deploy', 'docs/ubuntu.md']) {
 }
 for (const name of ['package.json', 'package-lock.json'])
   fs.copyFileSync(path.join(root, 'deploy/server', name), path.join(stage, name));
-const archive = path.join(artifacts, 'durak-ubuntu-3.231.tar.gz');
+const version = require('./server/package.json').version.replace(/\.0$/, '');
+const archive = path.join(artifacts, `durak-ubuntu-${version}.tar.gz`);
 execFileSync('tar', ['-czf', archive, '-C', stage, '.']);
 console.log(archive);

@@ -58,7 +58,14 @@ function enterLobby() {
   stopTimers();
   hideResultModal();
 }
+let cachedRooms = [];
+let onlyFriends = false;
+let friendIds = new Set();
+let filterRevision = 0;
 function renderRoomList(rooms) {
+  cachedRooms = rooms;
+  if (onlyFriends) rooms = rooms.filter((room) => friendIds.has(room.hostId));
+  $('roomCount').textContent = String(rooms.length);
   const el = $('roomList');
   el.innerHTML = '';
   if (!rooms.length) {
@@ -68,11 +75,31 @@ function renderRoomList(rooms) {
   rooms.forEach((r) => {
     const row = document.createElement('div');
     row.className = 'room';
+    const avatar = document.createElement('span');
+    avatar.className = 'room-avatar';
+    avatar.translate = false;
+    avatar.textContent = (r.hostName || r.name || r.code).slice(0, 2).toUpperCase();
+    row.append(avatar);
     const left = document.createElement('div');
-    left.innerHTML = `<div class="room-code">${r.code}</div><div class="room-meta">${r.players}/${r.maxPlayers} · ${r.players >= r.maxPlayers ? 'Заполнена' : r.players === 1 ? 'Ждём соперника' : 'Свободна'}</div><div class="room-mode">🎮 ${r.modeLabel || '36 карт'} · ${r.gameTypeLabel || 'Подкидной'}</div>`;
+    left.className = 'room-details';
+    for (const [className, text] of [
+      ['room-code', r.name || r.code],
+      ['room-host', r.hostName || ''],
+      [
+        'room-meta',
+        `${r.code} · ${r.players}/${r.maxPlayers} · ${r.players >= r.maxPlayers ? 'Заполнена' : r.players === 1 ? 'Ждём соперника' : 'Свободна'}`
+      ],
+      ['room-mode', `${r.modeLabel || '36 карт'} · ${r.gameTypeLabel || 'Подкидной'}`]
+    ]) {
+      const item = document.createElement('div');
+      item.className = className;
+      item.textContent = text;
+      if (['room-code', 'room-host'].includes(className)) item.translate = false;
+      left.append(item);
+    }
     const btn = document.createElement('button');
     btn.className = 'btn primary';
-    btn.textContent = 'Войти';
+    btn.textContent = 'Присоединиться';
     btn.disabled = r.players >= r.maxPlayers;
     btn.onclick = () => joinRoom(r.code);
     row.append(left, btn);
@@ -80,6 +107,30 @@ function renderRoomList(rooms) {
   });
 }
 export function initLobby() {
+  $('allTables').onclick = () => {
+    filterRevision++;
+    onlyFriends = false;
+    $('allTables').setAttribute('aria-pressed', 'true');
+    $('friendTables').setAttribute('aria-pressed', 'false');
+    renderRoomList(cachedRooms);
+  };
+  $('friendTables').onclick = async () => {
+    const revision = ++filterRevision;
+    try {
+      const response = await fetch('/api/auth/friends');
+      const data = await response.json();
+      if (revision !== filterRevision) return;
+      if (!response.ok) throw new Error(data.error);
+      friendIds = new Set(data.friends.filter((f) => f.status === 'accepted').map((f) => f.id));
+      onlyFriends = true;
+      $('allTables').setAttribute('aria-pressed', 'false');
+      $('friendTables').setAttribute('aria-pressed', 'true');
+      renderRoomList(cachedRooms);
+    } catch (error) {
+      if (revision !== filterRevision) return;
+      showToast(error.message);
+    }
+  };
   socket.on('connect', () => {
     session.actionPending = false;
     const remembered = roomFromUrl() || localStorage.getItem('durak_room_code');

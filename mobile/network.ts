@@ -27,6 +27,11 @@ export function serverAddress(value: string) {
   return url.origin;
 }
 
+export type SessionStore = {
+  get(address: string): Promise<string>;
+  set(address: string, cookie: string): Promise<void>;
+};
+
 type Listeners = {
   state(s: GameState): void;
   rooms(rooms: Room[]): void;
@@ -39,6 +44,7 @@ type Listeners = {
 export class NetworkGame {
   private socket?: Socket;
   private cookie = '';
+  private restored?: Promise<void>;
   private disposed = false;
   private room = '';
   private requests = new Set<AbortController>();
@@ -48,7 +54,8 @@ export class NetworkGame {
     readonly address: string,
     private name: string,
     private listeners: Listeners,
-    private retryDelay = 5000
+    private retryDelay = 5000,
+    private sessionStore?: SessionStore
   ) {}
   start() {
     if (this.disposed || this.starting || this.socket || this.retryTimer) return;
@@ -68,6 +75,18 @@ export class NetworkGame {
       });
   }
   async request(action: string, body?: object): Promise<any> {
+    if (this.disposed) throw new Error('Подключение закрыто');
+    if (!this.restored)
+      this.restored = (async () => {
+        try {
+          const saved = await this.sessionStore?.get(this.address);
+          if (saved && /^durak_session=[a-f0-9]{64}$/.test(saved)) this.cookie = saved;
+        } catch {
+          this.listeners.error('Не удалось восстановить вход. Можно войти снова.');
+        }
+      })();
+    await this.restored;
+    if (this.disposed) throw new Error('Подключение закрыто');
     const abort = new AbortController();
     this.requests.add(abort);
     const timer = setTimeout(() => abort.abort(), 12000);
@@ -84,7 +103,14 @@ export class NetworkGame {
       });
       if (this.disposed) throw new Error('Подключение закрыто');
       const cookie = response.headers.get('set-cookie')?.match(/durak_session=[^;]+/);
-      if (cookie) this.cookie = cookie[0];
+      if (cookie && /^durak_session=[a-f0-9]{64}$/.test(cookie[0])) {
+        this.cookie = cookie[0];
+        try {
+          await this.sessionStore?.set(this.address, this.cookie);
+        } catch {
+          this.listeners.error('Вход работает, но не сохранён на телефоне.');
+        }
+      }
       if (!response.headers.get('content-type')?.includes('application/json'))
         throw new Error('По этому адресу нет игрового сервера. Проверьте адрес и обновите сервер.');
       const data = await response.json();

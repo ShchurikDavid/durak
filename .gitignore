@@ -1,4 +1,5 @@
 /node_modules
+/deploy/server/node_modules/
 /.idea/
 /artifacts/
 /data/

@@ -17,6 +17,7 @@ export type GameState = {
   local?: boolean;
   bluetooth?: boolean;
   roomCode: string;
+  roomName?: string;
   status: string;
   statusText: string;
   role: string;
@@ -51,13 +52,14 @@ export type GameState = {
 };
 export type Room = {
   code: string;
+  name?: string;
   players: number;
   maxPlayers: number;
   modeLabel: string;
   gameTypeLabel: string;
 };
 export type User = { id: string; login: string; name: string };
-export type Options = { mode: string; maxPlayers: number; gameType: string };
+export type Options = { name?: string; mode: string; maxPlayers: number; gameType: string };
 export type Session = {
   send(event: string, payload?: unknown): void;
   dispose(): void;

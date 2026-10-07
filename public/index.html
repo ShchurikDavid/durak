@@ -13,12 +13,21 @@
     <link rel="stylesheet" href="/css/app-shell.css" />
     <link rel="stylesheet" href="/css/game-theme.css" />
     <link rel="stylesheet" href="/css/motion.css" />
-    <link rel="stylesheet" href="/css/phone.css?v=3.231-3" />
+    <link rel="stylesheet" href="/css/phone.css?v=3.233" />
+    <link rel="stylesheet" href="/css/account-pages.css" />
+    <link rel="stylesheet" href="/css/club.css" />
+    <link rel="stylesheet" href="/css/club-refinement.css" />
   </head>
   <body>
     <main id="lobby">
       <header class="app-header">
-        <div class="logo">ДУРАК <span class="brand-suit" aria-hidden="true">♠</span></div>
+        <div class="club-brand">
+          <span class="club-mark" aria-hidden="true">♠</span>
+          <div>
+            <div class="logo">ДУРАК</div>
+            <div class="club-tagline">Место для каждого</div>
+          </div>
+        </div>
         <div class="app-tagline">Карточная игра · 2–4 игрока</div>
       </header>
       <div class="lobby-toolbar">
@@ -48,15 +57,6 @@
           >
             ⚙️ Настройки
           </button>
-          <a
-            class="lobby-patreon"
-            href="https://www.patreon.com/cw/Durakcardsgame"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Поддержать проект на Patreon"
-            title="Поддержать проект на Patreon"
-            ><img src="/patreon-logo.png" alt="Patreon" width="25" height="26"
-          /></a>
         </nav>
         <section class="account-panel" aria-label="Аккаунт">
           <div id="accountStatus" aria-live="polite">Подключение…</div>
@@ -84,7 +84,7 @@
       <section class="panel play-panel">
         <div class="hero-copy">
           <span class="eyebrow">ЗА ОДНИМ СТОЛОМ</span>
-          <h1>Свой стол.<br />Своя игра.</h1>
+          <h1>Свой стол.<br /><em>Своя игра.</em></h1>
           <p>Знакомые правила.<br />Новый повод собраться.</p>
         </div>
         <div class="hero-cards" aria-hidden="true">
@@ -92,64 +92,186 @@
           <img class="playing-card card-two" src="/cards/bicycle-classic/AS.png" alt="" />
         </div>
         <button id="createRoom" class="btn primary room-create">
-          <span class="play-tile-icon" aria-hidden="true">♣</span>
+          <span class="play-tile-icon" aria-hidden="true">+</span>
           <span class="play-tile-copy"
             ><strong>Создать комнату</strong><small>Пригласи друзей за свой стол</small></span
           >
           <span class="play-tile-arrow" aria-hidden="true">↗</span>
         </button>
-        <button id="shareLobby" class="btn room-share">🔗 Поделиться сайтом</button>
+        <section class="panel join-panel">
+          <div class="section-heading">
+            <h2>Есть приглашение?</h2>
+            <span>Вход по коду</span>
+          </div>
+          <div class="create">
+            <input
+              id="roomCodeInput"
+              maxlength="5"
+              placeholder="Код комнаты"
+              aria-label="Код комнаты"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+            />
+            <button id="joinByCode" class="btn primary">Присоединиться</button>
+          </div>
+        </section>
+
+        <div class="lobby-social">
+          <button id="shareLobby" class="btn room-share">🔗 Поделиться сайтом</button
+          ><button id="openFriends" class="btn room-share" type="button">👥 Друзья</button>
+        </div>
+      </section>
+
+      <div class="lobby-side">
+        <section class="panel rooms-panel">
+          <div class="section-heading">
+            <h2>Открытые комнаты</h2>
+            <span class="live-label" id="roomCount">0</span>
+          </div>
+          <p class="club-room-hint">Найдите игру по душе</p>
+          <div class="room-filters" role="group" aria-label="Список комнат">
+            <button id="allTables" aria-pressed="true" type="button">Все столы</button
+            ><button id="friendTables" aria-pressed="false" type="button">Друзья</button>
+          </div>
+          <div id="roomList"><div class="empty">Загрузка комнат...</div></div>
+        </section>
+      </div>
+      <section class="club-shortcuts" aria-label="Об игре">
         <button
           id="openHistory"
-          class="btn room-share"
+          class="club-shortcut"
           type="button"
           aria-haspopup="dialog"
           aria-controls="historyDialog"
         >
-          Статистика
-        </button>
-      </section>
-
-      <section class="panel join-panel">
-        <div class="section-heading">
-          <h2>Есть приглашение?</h2>
-          <span>Вход по коду</span>
-        </div>
-        <div class="create">
-          <input
-            id="roomCodeInput"
-            maxlength="5"
-            placeholder="Код комнаты"
-            aria-label="Код комнаты"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-          />
-          <button id="joinByCode" class="btn primary">Войти</button>
-        </div>
-      </section>
-
-      <section class="panel rooms-panel">
-        <div class="section-heading">
-          <h2>Открытые комнаты</h2>
-          <span class="live-label">Можно присоединиться</span>
-        </div>
-        <div id="roomList"><div class="empty">Загрузка комнат...</div></div>
-      </section>
-      <footer class="lobby-footer">
-        <p>Подкидной или переводной — игра по твоим правилам</p>
-        <button
+          <span class="shortcut-icon" aria-hidden="true"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 4v15h15M9 15V9m4 6V5m4 10v-4" /></svg></span
+          ><span class="shortcut-copy"
+            ><strong>Статистика</strong><small>Ваши игры, победы и серии</small></span
+          ><svg
+            class="shortcut-arrow"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="m9 6 6 6-6 6" />
+          </svg></button
+        ><button
           id="openRules"
-          class="rules-link"
+          class="club-shortcut"
           type="button"
           aria-haspopup="dialog"
           aria-controls="rulesDialog"
         >
-          Напомнить правила →
+          <span class="shortcut-icon" aria-hidden="true"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 5v15M12 5C9 3 5 3 3 4v14c3-1 6-1 9 2 3-3 6-3 9-2V4c-2-1-6-1-9 1Z"
+              /></svg></span
+          ><span class="shortcut-copy"
+            ><strong>Как играть в Дурака</strong><small>Правила за пару минут</small></span
+          ><svg
+            class="shortcut-arrow"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="m9 6 6 6-6 6" />
+          </svg></button
+        ><button id="clubSettings" class="club-shortcut" type="button" aria-haspopup="dialog">
+          <span class="shortcut-icon" aria-hidden="true"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4m0 3h.01" /></svg></span
+          ><span class="shortcut-copy"
+            ><strong>Настроить игру</strong><small>Колода, звук и настройки стола</small></span
+          ><svg
+            class="shortcut-arrow"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="m9 6 6 6-6 6" />
+          </svg>
         </button>
+      </section>
+      <footer class="lobby-footer">
+        <p>Подкидной или переводной — игра по твоим правилам</p>
+        <nav class="footer-menu" aria-label="Дополнительная навигация">
+          <button id="footerRules" type="button">Правила</button>
+          <button id="footerSettings" type="button">Настройки</button>
+          <button id="footerAccount" type="button">Аккаунт</button>
+          <a
+            class="footer-patreon"
+            href="https://www.patreon.com/cw/Durakcardsgame"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Поддержать проект на Patreon"
+            ><img src="/patreon-logo.png" alt="" width="16" height="17" /><span>Patreon</span
+            ><svg
+              viewBox="0 0 24 24"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M14 3h7v7m0-7L10 14M10 5H5v14h14v-5" /></svg
+          ></a>
+        </nav>
       </footer>
     </main>
 
+    <dialog id="friendsDialog" class="create-room-dialog" aria-labelledby="friendsTitle">
+      <div class="history-heading">
+        <h2 id="friendsTitle">Друзья</h2>
+        <button id="closeFriends" class="btn" type="button">Закрыть</button>
+      </div>
+      <p>Обменяйтесь кодами, чтобы играть вместе.</p>
+      <div id="friendCode" class="friend-code" translate="no"></div>
+      <button id="copyFriendCode" class="btn" type="button">Скопировать мой код</button>
+      <form id="friendForm">
+        <label for="friendInput">Код друга</label
+        ><input id="friendInput" maxlength="36" autocomplete="off" required /><button
+          class="btn primary"
+        >
+          Добавить друга
+        </button>
+      </form>
+      <p id="friendsMessage" role="status"></p>
+      <div id="friendsList"></div>
+      <button id="refreshFriends" class="btn" type="button">Обновить</button>
+    </dialog>
     <dialog
       id="historyDialog"
       class="create-room-dialog match-history-panel"
@@ -190,10 +312,82 @@
       <form method="dialog"><button class="btn primary" autofocus>Понятно</button></form>
     </dialog>
 
-    <dialog id="authDialog" class="create-room-dialog" aria-labelledby="authTitle">
+    <section
+      hidden
+      id="welcomeDialog"
+      class="create-room-dialog welcome-dialog account-page"
+      aria-labelledby="welcomeTitle"
+      aria-describedby="welcomeDescription"
+    >
+      <select class="account-language" aria-label="Язык" data-language>
+        <option value="ru">Русский</option>
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+      </select>
+      <div class="site-brand" aria-label="Дурак">
+        ДУРАК <span class="brand-suit" aria-hidden="true">♠</span>
+      </div>
+      <div class="account-page-content">
+        <div class="welcome-mark"><img src="/icons/cards.svg" alt="" width="48" height="48" /></div>
+        <p class="welcome-eyebrow">ВАШЕ МЕСТО ЗА СТОЛОМ</p>
+        <h2 id="welcomeTitle">Играйте под своим именем</h2>
+        <p id="welcomeDescription">Создайте аккаунт, чтобы ваши результаты оставались с вами.</p>
+        <ul class="account-benefits">
+          <li>
+            <img src="/icons/players.svg" alt="" />
+            <div><strong>Ваш профиль</strong><span>Один ник на сайте и в приложении.</span></div>
+          </li>
+          <li>
+            <img src="/icons/cards.svg" alt="" />
+            <div>
+              <strong>История матчей</strong
+              ><span>Соперники, даты, победы, поражения и ничьи.</span>
+            </div>
+          </li>
+          <li>
+            <img src="/icons/link.svg" alt="" />
+            <div>
+              <strong>Результаты на разных устройствах</strong
+              ><span
+                >История доступна после входа. Игры с ботами и по Bluetooth из приложения
+                синхронизируются при подключении.</span
+              >
+            </div>
+          </li>
+        </ul>
+        <div class="welcome-actions">
+          <button id="welcomeRegister" class="btn primary" type="button" autofocus>
+            Создать аккаунт
+          </button>
+          <button id="welcomeGuest" class="btn" type="button">Продолжить без аккаунта</button>
+          <button id="welcomeLogin" class="welcome-login" type="button">
+            Уже есть аккаунт? Войти
+          </button>
+        </div>
+        <p class="welcome-note">
+          Гостевой режим бесплатный. Зарегистрироваться можно позже; история аккаунта ведётся после
+          входа.
+        </p>
+      </div>
+    </section>
+
+    <section
+      hidden
+      id="authDialog"
+      class="create-room-dialog account-page"
+      aria-labelledby="authTitle"
+    >
+      <select class="account-language" aria-label="Язык" data-language>
+        <option value="ru">Русский</option>
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+      </select>
+      <div class="site-brand" aria-label="Дурак">
+        ДУРАК <span class="brand-suit" aria-hidden="true">♠</span>
+      </div>
       <form id="authForm" class="account-form">
         <h2 id="authTitle">Вход в аккаунт</h2>
-        <label
+        <label id="authEmailLabel"
           >Почта<input
             id="authLogin"
             autocomplete="username"
@@ -210,46 +404,58 @@
         <label id="authNameLabel" class="hidden"
           >Ник в игре<input id="authName" autocomplete="nickname" maxlength="20"
         /></label>
-        <label for="authPassword">Пароль</label>
-        <div class="password-field">
+        <div class="auth-password-group">
+          <label for="authPassword">Пароль</label>
+          <div class="password-field">
+            <input
+              id="authPassword"
+              type="password"
+              autocomplete="current-password"
+              minlength="8"
+              maxlength="128"
+              required
+              aria-describedby="passwordHint"
+            /><button
+              id="togglePassword"
+              class="password-toggle"
+              type="button"
+              aria-controls="authPassword"
+              aria-pressed="false"
+              aria-label="Показать пароль"
+              title="Показать пароль"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                <circle cx="12" cy="12" r="3" />
+                <path class="eye-slash" d="m3 3 18 18" />
+              </svg>
+            </button>
+          </div>
+          <p id="passwordHint" class="create-room-hint">От 8 до 128 символов</p>
+        </div>
+        <label id="authConfirmLabel" class="hidden"
+          >Повторите пароль
           <input
-            id="authPassword"
+            id="authConfirm"
             type="password"
-            autocomplete="current-password"
+            autocomplete="new-password"
             minlength="8"
             maxlength="128"
-            required
-            aria-describedby="passwordHint"
-          /><button
-            id="togglePassword"
-            class="password-toggle"
-            type="button"
-            aria-controls="authPassword"
-            aria-pressed="false"
-            aria-label="Показать пароль"
-            title="Показать пароль"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-              <circle cx="12" cy="12" r="3" />
-              <path class="eye-slash" d="m3 3 18 18" />
-            </svg>
-          </button>
-        </div>
-        <p id="passwordHint" class="create-room-hint">От 8 до 128 символов</p>
+          />
+        </label>
         <p id="authError" class="form-error" role="alert"></p>
         <div class="create-room-actions">
-          <button id="cancelAuth" class="btn" type="button">Отмена</button
+          <button id="cancelAuth" class="btn" type="button">Назад</button
           ><button id="authSubmit" class="btn primary" type="submit">Войти</button>
         </div>
         <button id="authSwitch" class="btn" type="button">Создать аккаунт</button>
@@ -258,10 +464,19 @@
           <p id="googleSignInHint" class="create-room-hint" role="status"></p>
         </div>
       </form>
-    </dialog>
+    </section>
     <dialog id="createRoomDialog" class="create-room-dialog" aria-labelledby="createRoomTitle">
       <form id="createRoomForm">
         <h2 id="createRoomTitle">Новая комната</h2>
+        <label class="field-label" for="roomName">Название комнаты</label>
+        <input
+          id="roomName"
+          name="roomName"
+          maxlength="40"
+          placeholder="Например, Вечерняя партия"
+          autocomplete="off"
+        />
+
         <fieldset>
           <legend>🃏 Количество карт</legend>
           <div class="mode-grid">
@@ -398,65 +613,102 @@
         aria-modal="true"
         aria-labelledby="settingsTitle"
       >
-        <div id="settingsTitle" class="settings-title">⚙️ Настройки</div>
-        <form id="settingsNameForm" class="account-form settings-name-form">
-          <label for="settingsName">Ник в игре</label>
-          <input
-            id="settingsName"
-            autocomplete="nickname"
-            maxlength="20"
-            required
-            aria-describedby="settingsNameHint settingsNameError"
-          />
-          <p id="settingsNameHint" class="setting-sub">
-            От 1 до 20 символов. Изменение увидят игроки в комнате.
-          </p>
-          <p id="settingsNameError" class="form-error" role="alert"></p>
-          <button id="saveSettingsName" class="setting-toggle" type="submit">Сохранить ник</button>
-        </form>
-        <div class="setting-row">
-          <div class="setting-label">
-            🔊 Музыка<span class="setting-sub">Фоновая музыка игры</span>
+        <p class="modal-eyebrow">За одним столом</p>
+        <h2 id="settingsTitle" class="settings-title">Настройки игры</h2>
+        <button id="settingsDismiss" class="modal-dismiss" type="button" aria-label="Закрыть">
+          ×
+        </button>
+        <div class="audio-setting">
+          <div class="setting-row">
+            <div class="setting-label">
+              🔔 Звуки<span class="setting-sub">Звуки действий и карт</span>
+            </div>
+            <button
+              id="settingsSounds"
+              class="setting-toggle audio-switch"
+              aria-label="Звуки"
+              type="button"
+            ></button>
           </div>
-          <div class="setting-control">
-            <button id="settingsMusic" class="setting-toggle" type="button"></button>
-          </div>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">
-            🔔 Звуки<span class="setting-sub">Звуки действий и карт</span>
-          </div>
-          <div class="setting-control">
-            <button id="settingsSounds" class="setting-toggle" type="button"></button>
+          <div class="volume-row">
+            <label for="soundVolume">Громкость звуков</label
+            ><input
+              id="soundVolume"
+              class="setting-range"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+            /><output id="soundVolumeValue" for="soundVolume">100%</output>
           </div>
         </div>
-        <div class="setting-row">
-          <div class="setting-label">
-            🔉 Громкость музыки<span class="setting-sub"
-              >Текущая громкость: <b id="musicVolumeValue">3%</b></span
-            >
+        <div class="audio-setting">
+          <div class="setting-row">
+            <div class="setting-label">
+              🔊 Музыка<span class="setting-sub">Фоновая музыка игры</span>
+            </div>
+            <button
+              id="settingsMusic"
+              class="setting-toggle audio-switch"
+              aria-label="Музыка"
+              type="button"
+            ></button>
           </div>
-          <div class="setting-control">
-            <input id="musicVolume" class="setting-range" type="range" min="0" max="100" step="1" />
-          </div>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">
-            🔈 Громкость звуков<span class="setting-sub">Громкость эффектов</span>
-          </div>
-          <div class="setting-control">
-            <input id="soundVolume" class="setting-range" type="range" min="0" max="100" step="1" />
+          <div class="volume-row">
+            <label for="musicVolume">Громкость музыки</label
+            ><input
+              id="musicVolume"
+              class="setting-range"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+            /><output id="musicVolumeValue" for="musicVolume">3%</output>
           </div>
         </div>
         <div class="setting-row">
           <div class="setting-label">
             🃏 Скин колоды<span class="setting-sub">Внешний вид карт и рубашки</span>
           </div>
-          <div class="setting-control">
-            <button id="settingsSkin" class="setting-toggle" type="button">Выбрать</button>
-          </div>
+          <button id="settingsSkin" class="setting-toggle" type="button">Выбрать</button>
         </div>
-        <button id="closeSettings" class="btn settings-close" type="button">Закрыть</button>
+        <div class="setting-row">
+          <label for="languageSelect">Язык</label
+          ><select id="languageSelect">
+            <option value="ru">Русский</option>
+            <option value="uk">Українська</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="handSort">Сортировка карт</label
+          ><select id="handSort">
+            <option value="suit">По масти</option>
+            <option value="rank">По значению</option>
+            <option value="deal">Как раздали</option>
+          </select>
+        </div>
+        <details class="profile-setting">
+          <summary>Ник в игре</summary>
+          <form id="settingsNameForm" class="account-form settings-name-form">
+            <label for="settingsName">Ник в игре</label>
+            <input
+              id="settingsName"
+              autocomplete="nickname"
+              maxlength="20"
+              required
+              aria-describedby="settingsNameHint settingsNameError"
+            />
+            <p id="settingsNameHint" class="setting-sub">
+              От 1 до 20 символов. Изменение увидят игроки в комнате.
+            </p>
+            <p id="settingsNameError" class="form-error" role="alert"></p>
+            <button id="saveSettingsName" class="setting-toggle" type="submit">
+              Сохранить ник
+            </button>
+          </form>
+        </details>
+        <button id="closeSettings" class="btn primary settings-close" type="button">Готово</button>
       </section>
     </div>
 
@@ -496,6 +748,7 @@
     <audio id="bgMusic" src="bg-music.mp3" loop preload="auto"></audio>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/vendor/motion.js"></script>
     <script type="module" src="/js/app.js"></script>
   </body>
 </html>

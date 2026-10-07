@@ -214,3 +214,81 @@
     padding: 16px;
   }
 }
+
+.welcome-dialog {
+  width: min(540px, calc(100% - 24px));
+}
+.welcome-mark {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: #f1c40f12;
+  border: 1px solid #f1c40f44;
+}
+.welcome-eyebrow {
+  color: #d4af37;
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin: 22px 0 8px;
+}
+.welcome-dialog h2 {
+  font-size: clamp(24px, 6vw, 32px);
+  line-height: 1.15;
+  margin: 0 0 12px;
+}
+.welcome-dialog p {
+  line-height: 1.55;
+  color: #a6b3a5;
+}
+.account-benefits {
+  padding: 0;
+  margin: 24px 0;
+  list-style: none;
+  display: grid;
+  gap: 20px;
+}
+.account-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.account-benefits img {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.account-benefits strong,
+.account-benefits span {
+  display: block;
+}
+.account-benefits strong {
+  color: #f2efdf;
+  margin-bottom: 5px;
+}
+.account-benefits span {
+  color: #a6b3a5;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.welcome-actions {
+  display: grid;
+  gap: 10px;
+}
+#welcomeGuest {
+  background: #24372c;
+  border: 1px solid #506046;
+}
+.welcome-login {
+  background: none;
+  border: 0;
+  color: #f2efdf;
+  padding: 14px;
+  cursor: pointer;
+  font: inherit;
+}
+.welcome-note {
+  font-size: 12px;
+  margin-bottom: 0;
+}

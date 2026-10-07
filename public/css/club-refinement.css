@@ -1,0 +1,1057 @@
+/* Reference proportions shared by lobby, account pages and dialogs. */
+:root {
+  --app-bg: #071e16;
+  --app-panel: #102e22;
+  --app-line: #2c4839;
+  --app-text: #f2efdc;
+  --app-muted: #94aa9b;
+  --app-accent: #f5d21c;
+}
+body {
+  background: radial-gradient(ellipse at 8% 0%, #123325 0%, #071e16 58%);
+  font-family: Arial, sans-serif;
+}
+#lobby {
+  width: min(1160px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 22px 0 32px;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  align-content: start;
+}
+#lobby .app-header,
+#lobby .lobby-toolbar {
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ffffff0c;
+  margin: 0;
+  min-height: 62px;
+  box-sizing: border-box;
+}
+#lobby .app-tagline {
+  display: none;
+}
+#lobby .logo {
+  font:
+    700 23px Georgia,
+    serif;
+  letter-spacing: 0;
+}
+.club-mark {
+  width: 36px;
+  height: 36px;
+  font-size: 24px;
+  border-radius: 11px;
+}
+.club-tagline {
+  max-width: 130px;
+  font-size: 9px;
+  line-height: 1.5;
+}
+#lobby .app-nav .btn,
+#lobby .account-button {
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 11px;
+  box-shadow: none;
+}
+#lobby .lobby-toolbar .app-nav #openSettings {
+  width: 36px;
+  min-width: 36px;
+  font-size: 0;
+  padding: 8px;
+}
+#lobby .lobby-toolbar .app-nav #lobbyMusic {
+  min-width: 100px;
+  width: auto;
+}
+#lobby .lobby-patreon {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+}
+#lobby .play-panel {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#lobby .hero-copy {
+  min-height: 350px;
+  padding: 0;
+}
+#lobby .eyebrow {
+  padding: 8px 0;
+  font-size: 10px;
+  letter-spacing: 1.7px;
+}
+#lobby .eyebrow::before {
+  width: 18px;
+  height: 1px;
+  border-radius: 0;
+}
+#lobby .hero-copy h1 {
+  font-size: 62px;
+  line-height: 0.99;
+  max-width: 100%;
+  margin: 14px 0 24px;
+  letter-spacing: -2.5px;
+}
+#lobby .hero-copy p {
+  font-size: 14px;
+  line-height: 25px;
+  max-width: 75%;
+}
+#lobby .hero-cards {
+  top: 24px;
+  right: 12px;
+  transform: scale(0.72);
+  transform-origin: right top;
+}
+#lobby .room-create {
+  min-height: 76px;
+  height: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--app-accent);
+  box-shadow: none;
+}
+#lobby .play-tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #0000000b;
+}
+#lobby .play-tile-copy strong {
+  font-size: 16px;
+}
+#lobby .play-tile-copy small {
+  font-size: 11px;
+  margin-top: 6px;
+}
+#lobby .join-panel {
+  padding: 14px;
+  border-radius: 14px;
+  background: #102b20;
+}
+#lobby .join-panel .create {
+  margin: 0;
+  gap: 10px;
+}
+#lobby .join-panel .create input,
+#lobby .join-panel .create .btn {
+  min-height: 44px;
+  height: 44px;
+  padding: 10px 12px;
+  font-size: 12px;
+  border-radius: 9px;
+}
+#lobby .join-panel .create input {
+  text-align: left;
+}
+#lobby .lobby-social {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#lobby .lobby-social .btn {
+  margin: 0;
+  width: auto;
+  min-height: 32px;
+  padding: 4px 0;
+  font-size: 11px;
+}
+#lobby .lobby-side {
+  margin: 0;
+}
+#lobby .rooms-panel {
+  padding: 24px;
+  min-height: 590px;
+  background: linear-gradient(125deg, #123326, #0d281e);
+  border-radius: 18px;
+  box-shadow: none;
+}
+#lobby .section-heading h2 {
+  font-size: 27px;
+  line-height: 1.15;
+}
+#lobby .club-room-hint {
+  font-size: 11px;
+  margin: 6px 0 14px;
+}
+#lobby .room-filters button {
+  font-size: 11px;
+  min-height: 34px;
+  padding: 10px 0;
+}
+#lobby .live-label {
+  border: 1px solid var(--app-line);
+  border-radius: 30px;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+#lobby .empty {
+  padding: 70px 12px;
+  font-size: 13px;
+}
+#lobby .club-shortcuts {
+  border-radius: 15px;
+  background: #102b20;
+}
+#lobby .club-shortcuts button {
+  min-height: 86px;
+  text-align: left;
+  font:
+    600 13px Arial,
+    sans-serif;
+  padding: 20px 24px;
+}
+#lobby .lobby-footer {
+  padding: 20px 0 0;
+  text-align: left;
+  color: var(--app-muted);
+  font-size: 10px;
+}
+@media (min-width: 981px) {
+  #lobby {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    column-gap: 30px;
+    row-gap: 22px;
+  }
+  #lobby .play-panel,
+  #lobby .lobby-side {
+    margin-top: 20px;
+  }
+}
+/* Dialogs use the same subdued surface, spacing and typography. */
+.settings-backdrop,
+.skin-backdrop {
+  backdrop-filter: blur(7px);
+  background: #020d09b8;
+  padding: 14px;
+  box-sizing: border-box;
+}
+.settings-modal,
+.skin-modal,
+.result-modal,
+dialog.create-room-dialog {
+  background: linear-gradient(130deg, #153828, #0c251b);
+  border: 1px solid #355140;
+  border-radius: 20px;
+  padding: 28px;
+  color: var(--app-text);
+  box-shadow: 0 24px 80px #0004;
+  box-sizing: border-box;
+}
+.settings-modal {
+  position: relative;
+  width: min(426px, 100%);
+  max-height: calc(100dvh - 28px);
+  overflow: auto;
+}
+.modal-eyebrow {
+  color: var(--app-accent);
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  font-size: 9px;
+  font-weight: 700;
+  margin: 4px 40px 22px 0;
+}
+.modal-eyebrow::before {
+  content: '—';
+  margin-right: 8px;
+}
+.settings-title,
+dialog h2,
+.skin-title,
+.result-title {
+  font:
+    700 29px/1.15 Georgia,
+    serif;
+  letter-spacing: -1px;
+  margin: 0 0 14px;
+}
+.modal-dismiss {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--app-line);
+  border-radius: 9px;
+  color: var(--app-muted);
+  background: transparent;
+  font-size: 23px;
+  cursor: pointer;
+}
+.settings-modal .setting-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 15px 0;
+  border-bottom: 1px solid #ffffff0a;
+  font-size: 12px;
+}
+.settings-modal .setting-label {
+  font-size: 12px;
+  font-weight: 400;
+}
+.settings-modal .setting-sub {
+  display: block;
+  font-size: 10px;
+  line-height: 1.5;
+  margin-top: 6px;
+  color: var(--app-muted);
+}
+.settings-modal .setting-toggle,
+.settings-modal select {
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: #0e291e;
+  color: var(--app-text);
+  padding: 8px 10px;
+  font-size: 11px;
+  min-height: 32px;
+}
+.settings-modal .audio-setting {
+  border-bottom: 1px solid #ffffff0a;
+  padding-bottom: 15px;
+}
+.settings-modal .audio-setting .setting-row {
+  border: 0;
+  padding-bottom: 12px;
+}
+.settings-modal .audio-switch {
+  position: relative;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  font-size: 0;
+  border: 0 !important;
+  background: #526457 !important;
+  border-radius: 20px;
+}
+.settings-modal .audio-switch::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f2efdc;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.18s;
+}
+.settings-modal .audio-switch[aria-pressed='true'] {
+  background: #409a63 !important;
+}
+.settings-modal .audio-switch[aria-pressed='true']::after {
+  transform: translateX(16px);
+}
+.volume-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+  color: var(--app-muted);
+  font-size: 9px;
+}
+.volume-row output {
+  text-align: right;
+  color: var(--app-text);
+  font-size: 10px;
+}
+.settings-modal .setting-range {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  height: 16px;
+  accent-color: var(--app-accent);
+}
+.profile-setting {
+  padding: 14px 0;
+  font-size: 12px;
+  border-bottom: 1px solid #ffffff0a;
+}
+.profile-setting summary {
+  cursor: pointer;
+  color: var(--app-muted);
+}
+.settings-modal .settings-name-form {
+  padding: 12px 0 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+.settings-modal .settings-close {
+  width: 100%;
+  margin-top: 18px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  color: #102416;
+  background: var(--app-accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-page.create-room-dialog {
+  background: radial-gradient(ellipse at 15% 0%, #133526, #071e16 65%);
+  padding: 80px 24px 24px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.account-page .account-page-content,
+.account-page .account-form {
+  width: min(100%, 460px);
+  padding: 28px;
+  border: 1px solid var(--app-line);
+  border-radius: 20px;
+  background: linear-gradient(130deg, #143626, #0d281e);
+  box-sizing: border-box;
+}
+.account-page h2 {
+  text-align: left;
+  font:
+    700 32px/1.1 Georgia,
+    serif;
+  letter-spacing: -1px;
+  margin-bottom: 18px;
+}
+.account-page .welcome-eyebrow {
+  color: var(--app-accent);
+  font-size: 9px;
+  letter-spacing: 1.6px;
+}
+.account-page .account-benefits {
+  gap: 18px;
+  margin: 24px 0;
+}
+.account-page .account-benefits strong {
+  font-size: 13px;
+}
+.account-page .account-benefits span {
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.account-page .btn.primary {
+  background: var(--app-accent);
+  color: #102416;
+  border: 0;
+}
+.account-page .btn {
+  border-radius: 10px;
+  font-size: 13px;
+}
+.account-page .welcome-login {
+  font-size: 12px;
+}
+.account-page .welcome-note {
+  font-size: 10px;
+  line-height: 1.5;
+}
+.account-page .account-form {
+  gap: 12px;
+}
+.account-page .account-form input {
+  background: #092218;
+  border: 1px solid var(--app-line);
+  border-radius: 9px;
+}
+@media (max-width: 980px) {
+  #lobby {
+    width: min(600px, calc(100% - 28px));
+    padding: 18px 0 28px;
+    row-gap: 18px;
+  }
+  #lobby .app-header {
+    border: 0;
+    padding: 0;
+    min-height: 44px;
+  }
+  #lobby .hero-copy {
+    min-height: 290px;
+  }
+  #lobby .hero-copy h1 {
+    font-size: clamp(39px, 8vw, 58px);
+    margin: 16px 0 18px;
+  }
+  #lobby .hero-cards {
+    top: 155px;
+    transform: scale(0.72);
+    right: 4px;
+  }
+  #lobby .rooms-panel {
+    min-height: 320px;
+    padding: 20px;
+  }
+  #lobby .club-shortcuts button {
+    min-height: 64px;
+    padding: 18px 20px;
+  }
+  #lobby .lobby-toolbar .app-nav #lobbyMusic {
+    min-width: 36px;
+    width: 36px;
+  }
+  #lobby .lobby-toolbar .app-nav .btn {
+    width: 36px;
+    min-width: 36px;
+    flex-basis: 36px;
+  }
+  #lobby .join-panel .create .btn {
+    font-size: 11px;
+    padding: 8px;
+  }
+}
+@media (max-width: 360px) {
+  #lobby .join-panel .create {
+    flex-wrap: wrap;
+  }
+  #lobby .join-panel .create input {
+    flex-basis: 100%;
+    width: 100%;
+  }
+  #lobby .join-panel .create .btn {
+    width: 100%;
+    max-width: none;
+  }
+}
+@media (max-height: 760px), (max-width: 480px) {
+  .account-page .account-page-content,
+  .account-page .account-form {
+    padding: 20px;
+  }
+  .account-page h2 {
+    font-size: 27px;
+  }
+  .account-page .account-benefits {
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .account-page .account-form {
+    gap: 7px;
+  }
+}
+@media (max-height: 650px) {
+  .account-page.create-room-dialog {
+    padding: 64px 14px 8px;
+  }
+  .account-page .account-page-content,
+  .account-page .account-form {
+    padding: 14px;
+  }
+  .account-page h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .account-page .account-benefits {
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .account-page .welcome-note {
+    font-size: 9px;
+  }
+}
+#lobby .join-panel .section-heading h2 {
+  font:
+    700 12px/1.4 Arial,
+    sans-serif;
+  letter-spacing: 0;
+}
+body .settings-modal,
+body .skin-modal,
+body .result-modal {
+  background: linear-gradient(130deg, #153828, #0c251b);
+  border-radius: 20px;
+}
+.settings-modal .audio-switch {
+  min-width: 36px;
+  max-width: 36px;
+}
+#settingsTitle {
+  text-align: left;
+}
+#closeSettings {
+  background: var(--app-accent);
+  color: #102416;
+  border: 0;
+  border-radius: 10px;
+}
+#lobby .lobby-toolbar .app-nav #lobbyMusic {
+  flex: 0 0 auto;
+}
+#closeSettings {
+  background: var(--app-accent) !important;
+  color: #102416 !important;
+  border: 0 !important;
+}
+#lobby .club-shortcuts button {
+  margin: 0;
+}
+@media (min-width: 981px) {
+  #lobby .hero-copy {
+    min-height: 320px;
+  }
+}
+@media (max-height: 650px) {
+  #authDialog .account-form {
+    gap: 5px;
+    padding: 12px;
+  }
+  #authDialog .account-form input {
+    height: 36px;
+    min-height: 36px;
+    padding: 7px 10px;
+  }
+  #authDialog .account-form .btn {
+    min-height: 38px;
+    padding: 7px 9px;
+  }
+  #authDialog .account-form h2 {
+    font-size: 22px;
+    margin: 0 0 6px;
+  }
+  #authDialog .account-form label {
+    gap: 3px;
+  }
+  #authDialog .account-form p {
+    font-size: 10px;
+  }
+}
+/* Reference palette and warm primary-button hover. */
+:root {
+  --app-bg: #071d15;
+  --app-panel: #102c21;
+  --app-line: #2c4537;
+  --app-text: #f2efdb;
+  --app-muted: #93a899;
+  --app-accent: #f4d219;
+}
+body {
+  background: radial-gradient(ellipse at 6% 0%, #113023 0%, #071d15 62%);
+}
+#lobby .rooms-panel,
+body .settings-modal,
+body .skin-modal,
+body .result-modal,
+dialog.create-room-dialog {
+  background: linear-gradient(130deg, #133526, #0c251b);
+}
+#lobby .join-panel,
+#lobby .club-shortcuts {
+  background: #0e291e;
+}
+.account-page.create-room-dialog {
+  background: radial-gradient(ellipse at 12% 0%, #113023, #071d15 65%);
+}
+.account-page .account-page-content,
+.account-page .account-form {
+  background: linear-gradient(130deg, #133526, #0c251b);
+}
+#lobby #createRoom,
+.account-page .btn.primary,
+dialog .btn.primary,
+#closeSettings {
+  background: #f4d219 !important;
+  color: #102416 !important;
+  border-color: #f4d219 !important;
+  box-shadow: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  #lobby #createRoom:hover:not(:disabled),
+  .account-page .btn.primary:hover:not(:disabled),
+  dialog .btn.primary:hover:not(:disabled),
+  #closeSettings:hover:not(:disabled) {
+    background: #ffdc28 !important;
+    border-color: #ffe568 !important;
+    box-shadow:
+      0 0 0 1px #ffe66d55,
+      0 0 22px #f4d21945,
+      0 8px 28px #f4d21920;
+  }
+}
+#lobby #createRoom:focus-visible,
+.account-page .btn.primary:focus-visible,
+dialog .btn.primary:focus-visible,
+#closeSettings:focus-visible {
+  outline: 2px solid #fff0a0;
+  outline-offset: 4px;
+  box-shadow: 0 0 22px #f4d21945;
+}
+@media (prefers-reduced-motion: reduce) {
+  #lobby #createRoom,
+  .account-page .btn.primary,
+  dialog .btn.primary,
+  #closeSettings {
+    transition: none !important;
+  }
+}
+/* Account header: brand on the left and language on the right. */
+.account-page .site-brand {
+  position: absolute;
+  left: max(20px, env(safe-area-inset-left));
+  right: auto;
+  top: max(16px, env(safe-area-inset-top));
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+.account-page .account-language {
+  position: absolute;
+  left: auto;
+  right: max(20px, env(safe-area-inset-right));
+  top: max(16px, env(safe-area-inset-top));
+  width: 132px;
+  max-width: calc(50% - 24px);
+  height: 40px;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 20px;
+  box-sizing: border-box;
+}
+@media (max-width: 480px) {
+  .account-page .site-brand {
+    left: max(14px, env(safe-area-inset-left));
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+  .account-page .account-language {
+    right: max(14px, env(safe-area-inset-right));
+    width: 124px;
+  }
+}
+/* Three reference shortcuts: a single divided surface, with gentle hover feedback. */
+#lobby .club-shortcuts {
+  gap: 0;
+}
+#lobby .club-shortcuts .club-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 84px;
+  padding: 20px;
+  margin: 0;
+  border: 0;
+  border-right: 1px solid #ffffff05;
+  border-radius: 0;
+  background: transparent;
+  color: var(--app-text);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+#lobby .club-shortcuts .club-shortcut:last-child {
+  border-right: 0;
+}
+.shortcut-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 11px;
+  background: #f4d21912;
+  color: var(--app-accent);
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+.shortcut-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.shortcut-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+.shortcut-copy strong {
+  font:
+    600 12px/1.35 Arial,
+    sans-serif;
+}
+.shortcut-copy small {
+  font:
+    400 10px/1.4 Arial,
+    sans-serif;
+  color: var(--app-muted);
+}
+.shortcut-arrow {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: #7d9585;
+  transition:
+    transform 200ms ease,
+    color 200ms ease;
+}
+@media (hover: hover) {
+  #lobby .club-shortcuts .club-shortcut:hover {
+    background: #ffffff04;
+    box-shadow: inset 0 0 0 1px #f4d2190b;
+  }
+  .club-shortcut:hover .shortcut-icon {
+    background: #f4d21920;
+    box-shadow: 0 0 16px #f4d2190b;
+  }
+  .club-shortcut:hover .shortcut-arrow {
+    transform: translateX(3px);
+    color: var(--app-accent);
+  }
+}
+#lobby .club-shortcuts .club-shortcut:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: -3px;
+  background: #ffffff05;
+}
+@media (max-width: 980px) {
+  #lobby .club-shortcuts .club-shortcut {
+    min-height: 78px;
+    border-right: 0;
+    border-bottom: 1px solid #ffffff08;
+  }
+  #lobby .club-shortcuts .club-shortcut:last-child {
+    border-bottom: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.create-room-dialog[open] {
+    animation: shortcut-dialog-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  dialog.create-room-dialog[open]::backdrop {
+    backdrop-filter: blur(6px);
+    animation: surface-fade 220ms ease-out;
+  }
+  .settings-backdrop:not(.hidden) .settings-modal {
+    animation: shortcut-dialog-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+@keyframes shortcut-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+/* Patreon belongs to the same toolbar as the game controls. */
+#lobby .lobby-toolbar .app-nav .lobby-patreon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: #163c2b;
+  box-shadow: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+#lobby .lobby-toolbar .app-nav .lobby-patreon img {
+  display: block;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  opacity: 0.88;
+}
+@media (hover: hover) {
+  #lobby .lobby-toolbar .app-nav .lobby-patreon:hover {
+    background: #204b36;
+    border-color: #64835c;
+    box-shadow: 0 0 0 1px #f4d21916;
+  }
+}
+#lobby .lobby-toolbar .app-nav .lobby-patreon:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+/* Keep Patreon black, with the same geometry as Settings. */
+#lobby .lobby-toolbar .app-nav .lobby-patreon {
+  background: #080808;
+  border-color: #343434;
+}
+#lobby .lobby-toolbar .app-nav .lobby-patreon img {
+  opacity: 1;
+}
+@media (hover: hover) {
+  #lobby .lobby-toolbar .app-nav .lobby-patreon:hover {
+    background: #151515;
+    border-color: #505050;
+    box-shadow: none;
+  }
+}
+#lobby .lobby-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding-top: 24px;
+}
+#lobby .lobby-footer p {
+  margin: 0;
+}
+.footer-menu {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-left: auto;
+}
+.footer-menu button {
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-muted);
+  font:
+    400 10px/1.4 Arial,
+    sans-serif;
+  cursor: pointer;
+  box-shadow: none;
+}
+.footer-menu button:hover {
+  color: var(--app-text);
+  box-shadow: none;
+}
+.footer-patreon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 12px;
+  box-sizing: border-box;
+  border: 1px solid #343434;
+  border-radius: 20px;
+  background: #080808;
+  color: #f2efdc;
+  text-decoration: none;
+  font:
+    600 10px/1.4 Arial,
+    sans-serif;
+  white-space: nowrap;
+}
+.footer-patreon img {
+  display: block;
+  object-fit: contain;
+}
+.footer-patreon:hover {
+  background: #151515;
+  border-color: #505050;
+}
+.footer-menu :focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 4px;
+}
+@media (max-width: 600px) {
+  #lobby .lobby-footer {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .footer-menu {
+    gap: 14px;
+  }
+}
+/* Keep desktop controls and account together, without a growing navigation spacer. */
+@media (min-width: 981px) {
+  #lobby .lobby-toolbar {
+    justify-content: flex-end;
+    gap: 16px;
+  }
+  #lobby .lobby-toolbar .app-nav {
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: flex-end;
+  }
+  #lobby .lobby-toolbar .account-panel {
+    flex: 0 1 auto;
+    width: auto;
+    margin: 0;
+    gap: 12px;
+  }
+}
+/* Halve the former centered gutters while adapting to the viewport. */
+@media (min-width: 981px) {
+  #lobby {
+    width: min(calc(100% - 24px), calc(50% + 580px));
+    max-width: none;
+  }
+}
+@media (max-width: 980px) {
+  #lobby {
+    width: calc(100% - 28px);
+    max-width: none;
+  }
+}
+/* Mobile controls occupy the complete row; footer follows the compact reference. */
+@media (max-width: 980px) {
+  #lobby .lobby-toolbar .app-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+  }
+  #lobby .lobby-toolbar .app-nav .btn,
+  #lobby .lobby-toolbar .app-nav #lobbyMusic,
+  #lobby .lobby-toolbar .app-nav #openSettings {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: 44px;
+    padding: 10px;
+    justify-content: center;
+  }
+  #lobby .lobby-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+    padding-top: 24px;
+  }
+  #lobby .lobby-footer p {
+    text-align: left;
+    font-size: 9px;
+    line-height: 1.5;
+    color: var(--app-muted);
+  }
+  #lobby .footer-menu {
+    width: auto;
+    max-width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  #lobby .footer-menu button {
+    font-size: 10px;
+  }
+  #lobby .footer-patreon {
+    min-height: 30px;
+    padding: 5px 10px;
+  }
+}

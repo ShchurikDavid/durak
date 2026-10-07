@@ -85,6 +85,7 @@ function publicStateFor(room, index, lastAction) {
     surrendered: Boolean(me.surrendered),
     canSurrender: canSurrender(room, index),
     roomCode: room.code,
+    roomName: room.name || '',
     matchId: room.game.matchId,
     finishedAt: room.game.finishedAt,
     playersConnected: connectedCount,

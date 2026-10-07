@@ -13,9 +13,9 @@ import {
   Share,
   StatusBar,
   Switch,
-  Text,
   TextInput,
   View,
+  Keyboard,
   KeyboardAvoidingView
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -30,12 +30,22 @@ import {
   resultLabels
 } from '../src/game/match-history';
 import { DEFAULT_SERVER, NetworkGame } from './network';
+import { secureSessionStore } from './session-store';
 import { BluetoothGame, type Device } from './bluetooth';
 import { BluetoothIcon } from './BluetoothIcon';
-import { animateLayout, MotionProvider, ReducedMotion } from './motion';
+import { animateLayout, MotionProvider, ReducedMotion, WelcomeMotion } from './motion';
 import type { Card, GameState, Options, Room, Session, User } from './types';
 import { s, colors } from './styles';
 import { backs, faces, skins, skinNames, type Skin } from './cards';
+import { orderedHand } from '../public/js/hand-order';
+import { FriendsPanel } from './FriendsPanel';
+import {
+  LanguageProvider,
+  LanguagePicker,
+  useLanguage,
+  textFor,
+  LocalText as Text
+} from './language';
 import { handLayout } from './hand-layout';
 import { tableLayout } from './table-layout';
 import { configureAudio, defaultAudio, playSound, stopAudio, type AudioSettings } from './audio';
@@ -45,6 +55,13 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const suits: Record<string, string> = { S: '♠\uFE0E', H: '♥\uFE0E', D: '♦\uFE0E', C: '♣\uFE0E' };
 const suitNames: Record<string, string> = { S: 'Пики', H: 'Червы', D: 'Бубны', C: 'Трефы' };
 const defaults: Options = { mode: '36', maxPlayers: 2, gameType: 'throwIn' };
+function GameBrand() {
+  return (
+    <Text accessibilityLabel="Дурак" style={s.brand}>
+      ДУРАК <Text style={s.brandSuit}>♠</Text>
+    </Text>
+  );
+}
 const PATREON_URL = 'https://www.patreon.com/cw/Durakcardsgame';
 function PatreonButton({ label = false }: { label?: boolean }) {
   return (
@@ -119,7 +136,8 @@ function Field({
   onChangeText,
   password,
   email,
-  placeholder
+  placeholder,
+  compact = false
 }: {
   label: string;
   value: string;
@@ -127,23 +145,26 @@ function Field({
   password?: boolean;
   email?: boolean;
   placeholder?: string;
+  compact?: boolean;
 }) {
+  const { language } = useLanguage();
   const [visible, setVisible] = useState(false);
   return (
-    <View style={s.field}>
+    <View style={[s.field, compact && { gap: 3 }]}>
       <Text style={s.label}>{label}</Text>
       <View style={s.inputRow}>
         <TextInput
-          accessibilityLabel={label}
+          accessibilityLabel={textFor(label, language)}
           value={value}
           onChangeText={onChangeText}
-          placeholder={placeholder}
+          placeholder={placeholder ? textFor(placeholder, language) : undefined}
           placeholderTextColor={colors.muted}
           secureTextEntry={password && !visible}
+          maxLength={password ? 128 : email ? 254 : 20}
           autoCapitalize={email || password ? 'none' : 'sentences'}
           autoCorrect={!email && !password}
           keyboardType={email ? 'email-address' : 'default'}
-          style={s.input}
+          style={[s.input, compact && { minHeight: 40, paddingVertical: 7 }]}
         />
         {password && (
           <Pressable
@@ -283,7 +304,27 @@ function DurakApp() {
   const motionSignature = useRef('');
   const reducedMotionRef = useRef(reducedMotion);
   reducedMotionRef.current = reducedMotion;
+  const { language } = useLanguage();
+  const localizedAlert: typeof Alert.alert = (title, description, buttons, options) =>
+    Alert.alert(
+      textFor(title || '', language),
+      description ? textFor(description, language) : description,
+      buttons?.map((button) => ({
+        ...button,
+        text: button.text ? textFor(button.text, language) : button.text
+      })),
+      options
+    );
+  const [sortOrder, setSortOrder] = useState('suit');
+  useEffect(() => {
+    AsyncStorage.getItem('durak.native.sort')
+      .then((v) => {
+        if (['suit', 'rank', 'deal'].includes(v || '')) setSortOrder(v!);
+      })
+      .catch(() => {});
+  }, []);
   const [ready, setReady] = useState(false);
+  const welcomePending = useRef(false);
   const [name, setName] = useState('Игрок');
   const [draftName, setDraftName] = useState('Игрок');
   const address = DEFAULT_SERVER;
@@ -312,7 +353,16 @@ function DurakApp() {
   const [notice, setNotice] = useState('');
   const [options, setOptions] = useState<Options>(defaults);
   const [dialog, setDialog] = useState<
-    null | 'local' | 'network' | 'rules' | 'account' | 'settings' | 'bluetooth' | 'bluetooth-host'
+    | null
+    | 'welcome'
+    | 'local'
+    | 'network'
+    | 'rules'
+    | 'account'
+    | 'friends'
+    | 'settings'
+    | 'bluetooth'
+    | 'bluetooth-host'
   >(null);
   const [devices, setDevices] = useState<Device[]>([]);
   const [phonesOnly, setPhonesOnly] = useState(true);
@@ -322,8 +372,22 @@ function DurakApp() {
   const bluetooth = useRef<BluetoothGame | null>(null);
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [register, setRegister] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const accountPage = dialog === 'welcome' || dialog === 'account';
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  useEffect(() => {
+    setConfirmPassword('');
+  }, [register, dialog]);
   const [busy, setBusy] = useState(false);
   const [transfer, setTransfer] = useState(false);
   const [pending, setPending] = useState(false);
@@ -393,11 +457,16 @@ function DurakApp() {
       'durak.native.name',
       'durak.native.haptics',
       'durak.native.audio',
-      'durak.native.skin'
+      'durak.native.skin',
+      'durak.native.welcome.v1'
     ])
       .then((entries) => {
         if (!alive.current) return;
         const data = Object.fromEntries(entries);
+        if (data['durak.native.welcome.v1'] !== 'done') {
+          welcomePending.current = true;
+          setDialog('welcome');
+        }
         const stored = data['durak.native.name'] || 'Игрок';
         setName(stored);
         setDraftName(stored);
@@ -420,7 +489,11 @@ function DurakApp() {
           setAudio(defaultAudio);
         }
       })
-      .catch(() => notify('Настройки недоступны; можно продолжить как гость'))
+      .catch(() => {
+        welcomePending.current = true;
+        setDialog('welcome');
+        notify('Настройки недоступны; можно продолжить как гость');
+      })
       .finally(() => setReady(true));
     return () => {
       alive.current = false;
@@ -486,8 +559,24 @@ function DurakApp() {
     setTransfer(false);
     if (pendingTimer.current) clearTimeout(pendingTimer.current);
   }
+  function finishWelcome() {
+    welcomePending.current = false;
+    save('welcome.v1', 'done');
+    setDialog((current) => (current === 'welcome' ? null : current));
+  }
   function closeDialog() {
     if (busy) return;
+    if (dialog === 'welcome') {
+      finishWelcome();
+      return;
+    }
+    if (dialog === 'account') {
+      setPassword('');
+      if (welcomePending.current) {
+        setDialog('welcome');
+        return;
+      }
+    }
     if (dialog === 'bluetooth' && !game) {
       bluetooth.current?.dispose();
       bluetooth.current = null;
@@ -536,7 +625,7 @@ function DurakApp() {
     setDialog(null);
   }
   useEffect(() => {
-    if (ready && !game && !dialog && !network.current) connect();
+    if (ready && !game && !network.current) connect();
   }, [ready, tab, !!game, dialog]);
   function connect() {
     if (network.current) return;
@@ -544,35 +633,42 @@ function DurakApp() {
     setRooms([]);
     setUser(null);
     setConnectionIssue('');
-    const client = new NetworkGame(DEFAULT_SERVER, name, {
-      state: receive,
-      rooms: setRooms,
-      connection: (value) => {
-        setConnected(value);
-        if (value) setConnectionIssue('');
-      },
-      connectionIssue: setConnectionIssue,
-      profile: (account, nickname) => {
-        if (accountId.current !== (account?.id || null)) {
-          setHistory([]);
-          setHistoryMessage('');
+    const client = new NetworkGame(
+      DEFAULT_SERVER,
+      name,
+      {
+        state: receive,
+        rooms: setRooms,
+        connection: (value) => {
+          setConnected(value);
+          if (value) setConnectionIssue('');
+        },
+        connectionIssue: setConnectionIssue,
+        profile: (account, nickname) => {
+          if (accountId.current !== (account?.id || null)) {
+            setHistory([]);
+            setHistoryMessage('');
+          }
+          accountId.current = account?.id || null;
+          setUser(account);
+          if (account) finishWelcome();
+          if (nickname) {
+            setName(nickname);
+            setDraftName(nickname);
+          }
+        },
+        error: (text) => {
+          setPending(false);
+          notify(text);
+        },
+        closed: () => {
+          setGame(null);
+          setPending(false);
         }
-        accountId.current = account?.id || null;
-        setUser(account);
-        if (nickname) {
-          setName(nickname);
-          setDraftName(nickname);
-        }
       },
-      error: (text) => {
-        setPending(false);
-        notify(text);
-      },
-      closed: () => {
-        setGame(null);
-        setPending(false);
-      }
-    });
+      5000,
+      secureSessionStore
+    );
     network.current = client;
     client.start();
   }
@@ -596,7 +692,7 @@ function DurakApp() {
       notify('Сначала нажмите «Сдаться», затем можно выйти.');
       return;
     }
-    Alert.alert(
+    localizedAlert(
       'Выйти из партии?',
       game?.local
         ? user
@@ -642,8 +738,12 @@ function DurakApp() {
     }
   }
   async function account() {
+    if (register && password !== confirmPassword) {
+      notify('Пароли не совпадают');
+      return;
+    }
     if (!network.current || !connected) {
-      notify('Сначала подключитесь к серверу на вкладке «Комнаты»');
+      notify('Нет связи с сервером. Подождите подключения или продолжите без аккаунта.');
       return;
     }
     setBusy(true);
@@ -654,6 +754,7 @@ function DurakApp() {
         name
       });
       setPassword('');
+      finishWelcome();
       setDialog(null);
       notify(register ? 'Аккаунт создан' : 'Вы вошли в аккаунт');
     } catch (error) {
@@ -685,6 +786,11 @@ function DurakApp() {
   const handBudget = landscape
     ? Math.max(48, bodySize.height - 48)
     : Math.max(48, Math.min(176, bodySize.height * 0.26));
+  const sortedHand: { card: Card; index: number }[] = orderedHand(
+    game?.myHand || [],
+    sortOrder,
+    game?.trumpCard?.suit
+  );
   const layout = handLayout(game?.myHand.length || 0, handWidth, handBudget);
   const board = tableLayout(game?.table.length || 0, boardSize.width, boardSize.height);
   function renderHistory() {
@@ -784,7 +890,7 @@ function DurakApp() {
                     ? 'ИГРА ПО BLUETOOTH'
                     : game.local
                       ? 'ИГРА БЕЗ ИНТЕРНЕТА'
-                      : `КОМНАТА ${game.roomCode}`}
+                      : `${game.roomName || 'КОМНАТА'} · ${game.roomCode}`}
                 </Text>
                 <Text style={s.sectionTitle}>{game.gameTypeLabel}</Text>
               </View>
@@ -964,31 +1070,32 @@ function DurakApp() {
                       key={row.start}
                       style={{ width: row.width, height: layout.cardHeight + layout.lift }}
                     >
-                      {game.myHand.slice(row.start, row.start + row.size).map((card, offset) => {
-                        const i = row.start + offset;
-                        const legal = (
-                          transfer ? game.transferCardIndexes : game.playableCardIndexes || []
-                        ).includes(i);
-                        return (
-                          <View
-                            key={card.code}
-                            style={{
-                              position: 'absolute',
-                              left: offset * row.step,
-                              top: layout.lift,
-                              zIndex: offset + 1
-                            }}
-                          >
-                            <CardFace
-                              card={card}
-                              size={layout.cardWidth}
-                              active={legal && !!canAct}
-                              disabled={!canAct || !legal}
-                              onPress={() => send(transfer ? 'transferCard' : 'playCard', i)}
-                            />
-                          </View>
-                        );
-                      })}
+                      {sortedHand
+                        .slice(row.start, row.start + row.size)
+                        .map(({ card, index: i }, offset) => {
+                          const legal = (
+                            transfer ? game.transferCardIndexes : game.playableCardIndexes || []
+                          ).includes(i);
+                          return (
+                            <View
+                              key={card.code}
+                              style={{
+                                position: 'absolute',
+                                left: offset * row.step,
+                                top: layout.lift,
+                                zIndex: offset + 1
+                              }}
+                            >
+                              <CardFace
+                                card={card}
+                                size={layout.cardWidth}
+                                active={legal && !!canAct}
+                                disabled={!canAct || !legal}
+                                onPress={() => send(transfer ? 'transferCard' : 'playCard', i)}
+                              />
+                            </View>
+                          );
+                        })}
                     </View>
                   ))}
                   {!game.myHand.length && (
@@ -1020,7 +1127,7 @@ function DurakApp() {
                   secondary
                   onPress={() =>
                     game.bluetooth
-                      ? Alert.alert(
+                      ? localizedAlert(
                           'Игра рядом',
                           'На другом телефоне откройте «По Bluetooth» → «Найти друга» и выберите телефон создателя. ' +
                             btStatus,
@@ -1094,7 +1201,7 @@ function DurakApp() {
                       secondary
                       title="Сдаться"
                       onPress={() =>
-                        Alert.alert('Сдаться?', 'Вы останетесь наблюдать за партией.', [
+                        localizedAlert('Сдаться?', 'Вы останетесь наблюдать за партией.', [
                           { text: 'Отмена' },
                           { text: 'Сдаться', onPress: () => send('surrender') }
                         ])
@@ -1108,11 +1215,23 @@ function DurakApp() {
         ) : (
           <>
             <View style={s.header}>
-              <View>
-                <Text style={s.brand}>
-                  ДУРАК <Text style={s.brandSuit}>♠</Text>
-                </Text>
-                <Text style={s.caption}>Карточный клуб в кармане</Text>
+              <View style={[s.row, { flex: 1 }]}>
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    backgroundColor: colors.accent,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Text style={{ fontSize: 25, color: colors.bg }}>{'♠\uFE0E'}</Text>
+                </View>
+                <View style={{ flexShrink: 1 }}>
+                  <Text style={[s.brand, { fontFamily: 'serif', letterSpacing: 0 }]}>ДУРАК</Text>
+                  <Text style={s.caption}>Место для каждого</Text>
+                </View>
               </View>
               <View style={s.row}>
                 <PatreonButton />
@@ -1141,7 +1260,14 @@ function DurakApp() {
                       <View style={s.dot} />
                       <Text style={s.pillText}>ГОТОВА К ИГРЕ. ДАЖЕ ОФЛАЙН.</Text>
                     </View>
-                    <Text style={s.heroTitle}>Свой стол.{'\n'}Своя игра.</Text>
+                    <Text style={s.heroTitle}>
+                      Свой стол.{'\n'}
+                      <Text
+                        style={{ color: colors.accent, fontStyle: 'italic', fontWeight: '400' }}
+                      >
+                        Своя игра.
+                      </Text>
+                    </Text>
                     <Text style={s.heroDescription}>
                       Знакомые правила.{'\n'}Новый повод собраться.
                     </Text>
@@ -1280,7 +1406,10 @@ function DurakApp() {
                         rooms.map((room) => (
                           <View key={room.code} style={s.networkTile}>
                             <View style={s.flex}>
-                              <Text style={s.roomCode}>{room.code}</Text>
+                              <Text translate={false} style={s.roomCode}>
+                                {room.name || room.code}
+                              </Text>
+                              <Text style={s.caption}>{room.code}</Text>
                               <Text style={s.caption}>
                                 {room.players}/{room.maxPlayers} · {room.modeLabel} ·{' '}
                                 {room.gameTypeLabel}
@@ -1305,6 +1434,8 @@ function DurakApp() {
               )}
               {tab === 'profile' && (
                 <>
+                  <Button title="Друзья" secondary onPress={() => setDialog('friends')} />
+                  <LanguagePicker />
                   <Text style={s.eyebrow}>ВАШЕ МЕСТО В КЛУБЕ</Text>
                   <Button
                     secondary
@@ -1315,7 +1446,9 @@ function DurakApp() {
                     <View style={s.largeAvatar}>
                       <Text style={s.largeInitial}>{name.slice(0, 1).toUpperCase()}</Text>
                     </View>
-                    <Text style={s.title}>{name}</Text>
+                    <Text translate={false} style={s.title}>
+                      {name}
+                    </Text>
                     <Text style={s.muted}>
                       {user ? 'Аккаунт игрового сервера' : 'Локальный профиль · без регистрации'}
                     </Text>
@@ -1386,7 +1519,7 @@ function DurakApp() {
                     )}
                   </View>
                   <Text style={s.footer}>
-                    ДУРАК / 3.231{'\n'}Интерфейс и локальная игра находятся в приложении.
+                    ДУРАК / 3.3{'\n'}Интерфейс и локальная игра находятся в приложении.
                   </Text>
                 </>
               )}
@@ -1537,46 +1670,119 @@ function DurakApp() {
         </Modal>
         <Modal
           visible={!!dialog && !game?.timeout.active && !resultVisible}
-          transparent
+          transparent={!accountPage}
           animationType={reducedMotion ? 'none' : 'slide'}
           onRequestClose={() => {
             closeDialog();
           }}
         >
-          <KeyboardAvoidingView behavior="height" style={s.modalShade}>
-            <SafeAreaView style={s.modalSafe}>
-              <View style={s.sheet}>
-                <View style={s.sheetHandle} />
-                <View style={s.rowBetween}>
-                  <Text style={s.title}>
-                    {dialog === 'bluetooth'
-                      ? 'Игра рядом'
-                      : dialog === 'settings'
-                        ? 'Настройки'
-                        : dialog === 'account'
-                          ? register
-                            ? 'Создать аккаунт'
-                            : 'С возвращением'
-                          : dialog === 'rules'
-                            ? 'Как играть'
-                            : 'Новая партия'}
+          <KeyboardAvoidingView
+            behavior="height"
+            style={[s.modalShade, accountPage && s.accountPageShade]}
+          >
+            <SafeAreaView style={[s.modalSafe, accountPage && s.accountPageSafe]}>
+              {accountPage && (
+                <View style={s.brandHeader}>
+                  <GameBrand />
+                </View>
+              )}
+              <View style={[s.sheet, accountPage && s.accountPageSheet]}>
+                {!accountPage && <View style={s.sheetHandle} />}
+                <View
+                  style={[s.rowBetween, accountPage && { marginTop: keyboardVisible ? 0 : 16 }]}
+                >
+                  <Text style={[s.title, accountPage && { fontSize: keyboardVisible ? 20 : 27 }]}>
+                    {dialog === 'welcome'
+                      ? 'Играйте под своим именем'
+                      : dialog === 'bluetooth'
+                        ? 'Игра рядом'
+                        : dialog === 'friends'
+                          ? 'Друзья'
+                          : dialog === 'settings'
+                            ? 'Настройки'
+                            : dialog === 'account'
+                              ? register
+                                ? 'Создать аккаунт'
+                                : 'С возвращением'
+                              : dialog === 'rules'
+                                ? 'Как играть'
+                                : 'Новая партия'}
                   </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Закрыть"
-                    disabled={busy}
-                    style={s.iconButton}
-                    onPress={closeDialog}
-                  >
-                    <Text style={s.navIcon}>×</Text>
-                  </Pressable>
+                  {!accountPage && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Закрыть"
+                      disabled={busy}
+                      style={s.iconButton}
+                      onPress={closeDialog}
+                    >
+                      <Text style={s.navIcon}>×</Text>
+                    </Pressable>
+                  )}
                 </View>
                 <ScrollView
                   showsVerticalScrollIndicator={false}
                   showsHorizontalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={s.sheetBody}
+                  scrollEnabled={!accountPage}
+                  bounces={!accountPage}
+                  contentContainerStyle={[
+                    s.sheetBody,
+                    accountPage && { gap: keyboardVisible ? 6 : 12, paddingVertical: 12 }
+                  ]}
                 >
+                  {dialog === 'welcome' && (
+                    <WelcomeMotion compact>
+                      <Text style={s.caption}>
+                        Создайте аккаунт, чтобы ваши результаты оставались с вами.
+                      </Text>
+                      <View style={s.welcomeBenefit}>
+                        <Text style={s.sectionTitle}>Ваш профиль</Text>
+                        <Text style={s.caption}>
+                          Ник сохраняется в аккаунте и доступен на сайте и в приложении.
+                        </Text>
+                      </View>
+                      <View style={s.welcomeBenefit}>
+                        <Text style={s.sectionTitle}>История матчей</Text>
+                        <Text style={s.caption}>
+                          Когда и против кого вы играли, победы, поражения и ничьи — в одном месте.
+                        </Text>
+                      </View>
+                      <View style={s.welcomeBenefit}>
+                        <Text style={s.sectionTitle}>Результаты на разных устройствах</Text>
+                        <Text style={s.caption}>
+                          Войдите в тот же аккаунт. Результаты игр с ботами и по Bluetooth
+                          отправятся при подключении.
+                        </Text>
+                      </View>
+                      <Button
+                        small
+                        title="Создать аккаунт"
+                        onPress={() => {
+                          setRegister(true);
+                          setDialog('account');
+                        }}
+                      />
+                      <Button
+                        small
+                        title="Продолжить без аккаунта"
+                        secondary
+                        onPress={finishWelcome}
+                      />
+                      <Button
+                        small
+                        title="Уже есть аккаунт? Войти"
+                        secondary
+                        onPress={() => {
+                          setRegister(false);
+                          setDialog('account');
+                        }}
+                      />
+                      <Text style={s.caption}>
+                        Можно зарегистрироваться позже. История аккаунта ведётся после входа.
+                      </Text>
+                    </WelcomeMotion>
+                  )}
                   {(dialog === 'local' || dialog === 'network' || dialog === 'bluetooth-host') && (
                     <>
                       <Text style={s.muted}>
@@ -1586,6 +1792,15 @@ function DurakApp() {
                             ? 'Создайте Bluetooth-стол. Друзья выберут ваш телефон в поиске. Все места займут реальные игроки.'
                             : 'Создайте комнату и пригласите друзей по коду.'}
                       </Text>
+                      {dialog === 'network' && (
+                        <Field
+                          label="Название комнаты"
+                          value={options.name || ''}
+                          onChangeText={(name) =>
+                            setOptions({ ...options, name: name.slice(0, 40) })
+                          }
+                        />
+                      )}
                       <Text style={s.label}>Колода</Text>
                       <View style={s.chips}>
                         {['24', '36', '52', '54'].map((mode) => (
@@ -1728,8 +1943,31 @@ function DurakApp() {
                         ))}
                     </>
                   )}
+                  {dialog === 'friends' && <FriendsPanel client={network.current} user={user} />}
                   {dialog === 'settings' && (
                     <>
+                      <LanguagePicker />
+                      <Text style={s.label}>Сортировка карт</Text>
+                      <View style={s.chips}>
+                        {[
+                          ['suit', 'По масти'],
+                          ['rank', 'По значению'],
+                          ['deal', 'Как раздали']
+                        ].map(([id, label]) => (
+                          <Button
+                            key={id}
+                            title={label}
+                            small
+                            secondary={sortOrder !== id}
+                            onPress={() => {
+                              setSortOrder(id);
+                              AsyncStorage.setItem('durak.native.sort', id).catch(() =>
+                                setNotice('Не удалось сохранить настройки')
+                              );
+                            }}
+                          />
+                        ))}
+                      </View>
                       <Field label="Ник в игре" value={draftName} onChangeText={setDraftName} />
                       <Button title="Сохранить ник" onPress={rename} disabled={busy} />
                       <View style={s.rowBetween}>
@@ -1816,36 +2054,75 @@ function DurakApp() {
                   )}
                   {dialog === 'account' && (
                     <>
-                      <Text style={s.muted}>
-                        Почта и пароль аккаунта игрового сервера. Пароль от самой почты не нужен.
-                      </Text>
+                      {!keyboardVisible && (
+                        <Text style={s.caption}>
+                          Почта и пароль игрового аккаунта. Пароль от почты не нужен.
+                        </Text>
+                      )}
                       <Field
                         label="Почта"
                         email
+                        compact
                         value={email}
                         onChangeText={setEmail}
                         placeholder="name@example.com"
                       />
-                      <Field label="Пароль" password value={password} onChangeText={setPassword} />
+                      <Field
+                        label="Пароль"
+                        password
+                        compact
+                        value={password}
+                        onChangeText={setPassword}
+                      />
                       {register && (
+                        <Field
+                          label="Повторите пароль"
+                          password
+                          compact
+                          value={confirmPassword}
+                          onChangeText={setConfirmPassword}
+                        />
+                      )}
+                      {register && !keyboardVisible && (
                         <Text style={s.caption}>
-                          Ваш ник: {name}. Пароль — от 8 до 128 символов.
+                          Ваш ник: <Text translate={false}>{name}</Text>. Пароль — от 8 до 128
+                          символов.
+                        </Text>
+                      )}
+                      {register && !!confirmPassword && password !== confirmPassword && (
+                        <Text accessibilityRole="alert" style={s.caption}>
+                          Пароли не совпадают
                         </Text>
                       )}
                       <Button
                         title={busy ? 'Подождите…' : register ? 'Создать аккаунт' : 'Войти'}
-                        disabled={busy || !email.trim() || password.length < 8}
+                        compact={keyboardVisible}
+                        disabled={
+                          busy ||
+                          !connected ||
+                          !email.trim() ||
+                          password.length < 8 ||
+                          password.length > 128 ||
+                          (register && password !== confirmPassword)
+                        }
                         onPress={account}
                       />
-                      <Button
-                        secondary
-                        title={register ? 'Уже есть аккаунт' : 'Зарегистрироваться'}
-                        disabled={busy}
-                        onPress={() => setRegister(!register)}
-                      />
-                      <Text style={s.caption}>
-                        Вход через Google в этой версии приложения пока не подключён.
-                      </Text>
+                      {!keyboardVisible && (
+                        <>
+                          <Button
+                            secondary
+                            title={register ? 'Уже есть аккаунт? Войти' : 'Создать аккаунт'}
+                            disabled={busy}
+                            onPress={() => setRegister(!register)}
+                          />
+                          <Button secondary title="Назад" disabled={busy} onPress={closeDialog} />
+                          {!connected && (
+                            <Text style={s.caption}>
+                              Нет связи с сервером. Подключаемся автоматически…
+                            </Text>
+                          )}
+                        </>
+                      )}
                     </>
                   )}
                   {dialog === 'rules' && (
@@ -1895,7 +2172,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <MotionProvider>
-        <DurakApp />
+        <LanguageProvider>
+          <DurakApp />
+        </LanguageProvider>
       </MotionProvider>
     </SafeAreaProvider>
   );

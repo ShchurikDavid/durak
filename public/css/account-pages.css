@@ -1,0 +1,224 @@
+.site-brand {
+  position: fixed;
+  top: max(18px, env(safe-area-inset-top));
+  right: max(22px, env(safe-area-inset-right));
+  z-index: 90;
+  color: var(--app-text);
+  font-size: 23px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  line-height: 30px;
+  white-space: nowrap;
+}
+.account-page-open {
+  overflow: hidden;
+}
+.account-page {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 62px 22px max(16px, env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--app-bg);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.account-page:not([hidden]) {
+  display: grid;
+  place-items: center;
+}
+.account-page .account-page-content,
+.account-page .account-form {
+  width: min(100%, 440px);
+  margin: 0;
+  min-height: 0;
+}
+.account-page .welcome-mark {
+  display: none;
+}
+.account-page .welcome-eyebrow {
+  margin: 0 0 12px;
+}
+.account-page h2 {
+  font-size: clamp(24px, 5vw, 32px);
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+.account-page .account-form {
+  display: grid;
+  gap: 8px;
+}
+.account-page .account-form label {
+  margin: 0;
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+}
+.account-page .account-form label.hidden {
+  display: none;
+}
+.account-page .account-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+}
+.account-page .account-form p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.account-page .create-room-actions {
+  margin: 6px 0 0;
+}
+.account-page .btn {
+  min-height: 44px;
+  padding: 10px 14px;
+}
+.account-page .form-error:empty,
+.account-page .google-signin:has(#googleSignIn:empty) {
+  display: none;
+}
+.account-page .google-signin {
+  margin: 0;
+}
+.account-page .welcome-login {
+  padding: 10px;
+  min-height: 44px;
+}
+.account-page .account-benefits {
+  gap: 16px;
+  margin: 20px 0;
+}
+@media (max-height: 740px) {
+  .account-page {
+    padding-top: 56px;
+    padding-bottom: 10px;
+  }
+  .account-page h2 {
+    font-size: 25px;
+    margin-bottom: 8px;
+  }
+  .account-page .account-form {
+    gap: 5px;
+  }
+  .account-page .account-benefits {
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .account-page .account-benefits span,
+  .account-page p {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .account-page .welcome-note {
+    font-size: 11px;
+  }
+}
+@media (max-height: 530px) and (min-width: 600px) {
+  .account-page .account-form {
+    width: min(100%, 720px);
+    grid-template-columns: 1fr 1fr;
+    column-gap: 24px;
+  }
+  .account-page .account-form h2,
+  .account-page .account-form .form-error {
+    grid-column: 1 / -1;
+  }
+  .account-page .account-page-content {
+    width: min(100%, 840px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 28px;
+  }
+  .account-page .account-benefits {
+    grid-column: 2;
+    grid-row: 1 / 5;
+  }
+  .account-page .welcome-note {
+    grid-column: 1 / -1;
+  }
+}
+
+.account-page {
+  z-index: 100;
+}
+.account-page[hidden] {
+  display: none;
+}
+.auth-password-group {
+  display: grid;
+  gap: 5px;
+}
+@media (max-width: 380px) {
+  .account-page h2 {
+    font-size: 22px;
+  }
+}
+@media (max-height: 600px) {
+  .account-page .account-benefits {
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .account-page .welcome-eyebrow {
+    margin-bottom: 8px;
+  }
+  .account-page .welcome-note {
+    margin-top: 6px;
+  }
+  .account-page .welcome-actions {
+    gap: 6px;
+  }
+}
+@media (max-height: 530px) and (min-width: 600px) {
+  #authTitle {
+    grid-area: 1 / 1 / 2 / 3;
+  }
+  #authEmailLabel {
+    grid-area: 2 / 1;
+  }
+  #authNameLabel {
+    grid-area: 2 / 2;
+  }
+  #loginHint {
+    display: none;
+  }
+  .auth-password-group {
+    grid-area: 3 / 1;
+  }
+  #authConfirmLabel {
+    grid-area: 3 / 2;
+  }
+  #authError {
+    grid-area: 4 / 1 / 5 / 3;
+  }
+  #authForm .create-room-actions {
+    grid-area: 5 / 1;
+  }
+  #authSwitch {
+    grid-area: 5 / 2;
+    align-self: end;
+  }
+  #authForm .google-signin {
+    grid-area: 6 / 1 / 7 / 3;
+  }
+}
+
+@media (max-height: 600px) and (max-width: 599px) {
+  .account-page .welcome-note {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .account-page .account-benefits span {
+    line-height: 1.25;
+  }
+  .account-page .account-benefits strong {
+    margin-bottom: 3px;
+  }
+}

@@ -10,17 +10,18 @@ const {
 } = require('../config');
 
 function normalizeMode(value) {
-  const mode = String(value || DEFAULT_MODE);
+  const mode =
+    typeof value === 'string' || typeof value === 'number' ? String(value) : DEFAULT_MODE;
   return Object.hasOwn(MODE_CONFIG, mode) ? mode : DEFAULT_MODE;
 }
 
 function normalizePlayerCount(value) {
-  const count = Number(value);
+  const count = typeof value === 'string' || typeof value === 'number' ? Number(value) : 2;
   return Number.isInteger(count) ? Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, count)) : 2;
 }
 
 function normalizeRoomCode(value) {
-  return String(value || '')
+  return (typeof value === 'string' ? value : '')
     .trim()
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '')

@@ -21,7 +21,7 @@ function createRoomService(
   {
     setTimeout = globalThis.setTimeout,
     clearTimeout = globalThis.clearTimeout,
-    random = Math.random,
+    random = () => crypto.randomInt(0x100000000) / 0x100000000,
     onPlayerState = () => {}
   } = {}
 ) {
@@ -46,6 +46,13 @@ function createRoomService(
 
     const room = {
       code,
+      name:
+        typeof data.name === 'string'
+          ? data.name
+              .replace(/[\x00-\x1f\x7f]/g, '')
+              .trim()
+              .slice(0, 40)
+          : '',
       mode,
       gameType: data.gameType === 'transfer' ? 'transfer' : 'throwIn',
       maxPlayers,
@@ -74,6 +81,11 @@ function createRoomService(
   function roomInfo(room) {
     return {
       code: room.code,
+      name: room.name,
+      hostName: room.players[0]?.name || '',
+      hostId: room.players[0]?.userId?.startsWith('account:')
+        ? room.players[0].userId.slice(8)
+        : null,
       players: room.players.filter((player) => player.socketId).length,
       maxPlayers: room.maxPlayers,
       mode: room.mode,

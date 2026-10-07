@@ -14,7 +14,7 @@ export function captureCards() {
 }
 
 export function animateCards(before) {
-  if (reduced()) return;
+  if (reduced() || !window.Motion) return;
   // Measure together before starting animations; preserve CSS rotation and highlights.
   const items = cards().map((card) => ({ card, rect: surface(card).getBoundingClientRect() }));
   for (const { card, rect } of items) {
@@ -25,14 +25,28 @@ export function animateCards(before) {
     if (old && Math.abs(x) < 1 && Math.abs(y) < 1) continue;
     const target = surface(card);
     running.get(target)?.cancel();
-    const animation = target.animate(
-      [
-        { translate: `${x}px ${y}px`, opacity: old ? 1 : 0 },
-        { translate: '0px 0px', opacity: 1 }
-      ],
-      { duration: 240, easing: 'cubic-bezier(.22, 1, .36, 1)' }
+    const animation = window.Motion.animate(
+      target,
+      { translate: [`${x}px ${y}px`, '0px 0px'], opacity: [old ? 1 : 0, 1] },
+      { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
     );
     running.set(target, animation);
-    animation.onfinish = () => running.delete(target);
+    animation.then(() => {
+      if (running.get(target) === animation) running.delete(target);
+    });
   }
+}
+
+export function revealSurface(element) {
+  if (reduced() || !window.Motion) return;
+  running.get(element)?.cancel();
+  const animation = window.Motion.animate(
+    element,
+    { opacity: [0, 1], translate: ['0 12px', '0 0'] },
+    { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+  );
+  running.set(element, animation);
+  animation.then(() => {
+    if (running.get(element) === animation) running.delete(element);
+  });
 }

@@ -1,6 +1,6 @@
 {
   "name": "durak-lan-game",
-  "version": "3.0.0",
+  "version": "3.235.0",
   "private": true,
   "description": "Подкидной Дурак на 2–4 игроков: комнаты, LAN и Cloudflare Tunnel",
   "main": "server.js",
@@ -18,8 +18,10 @@
     "@react-native-async-storage/async-storage": "^2.2.0",
     "express": "^4.19.2",
     "google-auth-library": "^11.1.0",
+    "motion": "14.0.0",
     "react": "19.2.3",
     "react-native": "0.87.1",
+    "react-native-keychain": "10.0.0",
     "react-native-safe-area-context": "^5.10.1",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.8.3"

@@ -159,10 +159,17 @@ class GameBluetoothModule(private val context: ReactApplicationContext) : ReactC
             try {
                 val input = socket.inputStream
                 val buffer = java.io.ByteArrayOutputStream()
+                var packetWindow = android.os.SystemClock.elapsedRealtime()
+                var packetCount = 0
                 while (generation == token) {
                     val byte = input.read()
                     if (byte == -1) break
-                    if (byte == 10) { emit("message", id, buffer.toString("UTF-8")); buffer.reset() }
+                    if (byte == 10) {
+                        val now = android.os.SystemClock.elapsedRealtime()
+                        if (now - packetWindow >= 1000) { packetWindow = now; packetCount = 0 }
+                        if (++packetCount > 40) throw IllegalStateException("Too many packets")
+                        emit("message", id, buffer.toString("UTF-8")); buffer.reset()
+                    }
                     else { if (buffer.size() >= 65536) throw IllegalStateException("Packet too large"); buffer.write(byte) }
                 }
             } catch (_: Exception) {} finally {
